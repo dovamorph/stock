@@ -1,8 +1,8 @@
 """
 StockPilot KR — screener.py
-- 종목 리스트: FinanceDataReader (시가총액 상위 20)
-- 재무 데이터: yfinance (PER/PBR/ROE/배당, IP 차단 없음)
-- 가격 데이터: FinanceDataReader
+- 재무: yfinance (PER/PBR/ROE)
+- 가격: FinanceDataReader
+- Discord: 재무 없어도 항상 내용 전송
 """
 import os, json, time, traceback
 from datetime import datetime, timedelta
@@ -24,7 +24,6 @@ FILTER_PBR      = 1.5
 FILTER_DIV      = 3.0
 MOMENTUM_THRESH = 20.0
 
-# ── 날짜 유틸 ─────────────────────────────────────────────────────
 def last_trading_day() -> str:
     now = datetime.now()
     for i in range(1, 10):
@@ -42,7 +41,7 @@ def fmt(d: str) -> str:
 def safe_float(v, default=0.0) -> float:
     try:
         val = float(v or 0)
-        return val if val == val else default  # NaN 체크
+        return default if (val != val) else val  # NaN 체크
     except:
         return default
 
@@ -54,7 +53,6 @@ def fetch_top20() -> list[dict]:
         kosdaq = fdr.StockListing('KOSDAQ'); kosdaq['market'] = 'KOSDAQ'
         df = pd.concat([kospi, kosdaq], ignore_index=True)
 
-        # 컬럼 정규화
         col_map = {}
         for c in df.columns:
             cl = c.lower()
@@ -92,23 +90,18 @@ def fetch_top20() -> list[dict]:
 
 # ── 2단계: yfinance 재무 데이터 ───────────────────────────────────
 def fetch_yfinance(ticker: str, suffix: str) -> dict:
-    """Yahoo Finance로 PER/PBR/ROE/배당 가져오기"""
-    result = {"per": 0.0, "pbr": 0.0, "roe": 0.0, "div": 0.0}
     try:
-        yf_ticker = f"{ticker}{suffix}"
-        info = yf.Ticker(yf_ticker).info
-
-        per = safe_float(info.get("trailingPE") or info.get("forwardPE") or 0)
-        pbr = safe_float(info.get("priceToBook", 0))
-        roe_raw = info.get("returnOnEquity", 0)
+        info = yf.Ticker(f"{ticker}{suffix}").info
+        per = safe_float(info.get("trailingPE") or info.get("forwardPE"))
+        pbr = safe_float(info.get("priceToBook"))
+        roe_raw = info.get("returnOnEquity")
         roe = safe_float(roe_raw * 100 if roe_raw else 0)
-        div_raw = info.get("dividendYield", 0)
+        div_raw = info.get("dividendYield")
         div = safe_float(div_raw * 100 if div_raw else 0)
-
-        result = {"per": per, "pbr": pbr, "roe": roe, "div": div}
+        return {"per": per, "pbr": pbr, "roe": roe, "div": div}
     except Exception as e:
         print(f"    yfinance 오류: {e}")
-    return result
+        return {"per": 0.0, "pbr": 0.0, "roe": 0.0, "div": 0.0}
 
 # ── 3단계: 가격/등락률 ────────────────────────────────────────────
 def fetch_price(ticker: str, start: str, end: str) -> dict:
@@ -174,36 +167,55 @@ def apply_filters(d: dict) -> dict:
 def send_discord(results: list, date: str, recommended: list):
     if not DISCORD_WEBHOOK:
         print("  ℹ️  DISCORD_WEBHOOK 미설정"); return
+
     dt = f"{date[:4]}.{date[4:6]}.{date[6:]}"
     ge = {"A":"🟢","B":"🔵","C":"🟡","D":"🔴"}
     fields = []
-    for r in recommended[:6]:
-        g = r.get("grade","D"); f = r.get("filters",{})
-        flags = ("  🔥급등" if f.get("momentum") else "") + ("  💰배당" if f.get("div_ok") else "")
+
+    # 추천 종목이 있으면 추천 종목 표시
+    if recommended:
+        for r in recommended[:5]:
+            g = r.get("grade","D"); f = r.get("filters",{})
+            flags = ("🔥" if f.get("momentum") else "") + ("💰" if f.get("div_ok") else "")
+            fields.append({
+                "name": f"{ge.get(g,'⚪')} {r['name']} ({r['market']}) {g}등급 {r['score']}점 {flags}",
+                "value": (
+                    f"```ROE {r.get('roe',0):.1f}%  PER {r.get('per',0):.1f}배  PBR {r.get('pbr',0):.2f}```"
+                    f"20일 {r.get('ch20',0):+.1f}%  배당 {r.get('div',0):.1f}%"
+                ),
+                "inline": False
+            })
+    else:
+        # 추천 없어도 모멘텀 상위 5개는 무조건 표시
+        top5 = sorted(results, key=lambda x: x.get("ch20", 0), reverse=True)[:5]
         fields.append({
-            "name": f"{ge.get(g,'⚪')} {r['name']} ({r['market']})  {g}등급 {r['score']}점{flags}",
-            "value": (
-                f"```ROE {r.get('roe',0):.1f}%  |  PER {r.get('per',0):.1f}배  |  PBR {r.get('pbr',0):.2f}```"
-                f"20일 {r.get('ch20',0):+.1f}%  ·  배당 {r.get('div',0):.1f}%  ·  시총 {r.get('tvol',0):,}억"
-            ),
+            "name": "📊 이번주 모멘텀 상위 종목 (필터 조건 미충족)",
+            "value": "ROE/PER/PBR 기준 추천 종목 없음 — 20일 등락 기준 상위 종목을 표시합니다.",
             "inline": False
         })
-    if not fields:
-        fields.append({
-            "name": "⚠️ 추천 종목 없음",
-            "value": "오늘 필터(ROE≥15% · PER≤15배 · PBR≤1.5배)를 통과한 종목이 없습니다.",
-            "inline": False
-        })
+        for r in top5:
+            trend = "📈" if r.get("ch20",0) > 0 else "📉"
+            per_str = f"PER {r.get('per',0):.1f}배" if r.get('per',0) > 0 else "PER 데이터없음"
+            pbr_str = f"PBR {r.get('pbr',0):.2f}" if r.get('pbr',0) > 0 else "PBR 데이터없음"
+            fields.append({
+                "name": f"{trend} {r['name']} ({r['market']}) — 20일 {r.get('ch20',0):+.1f}%",
+                "value": f"{per_str}  {pbr_str}  ROE {r.get('roe',0):.1f}%",
+                "inline": False
+            })
+
     try:
         res = requests.post(DISCORD_WEBHOOK, json={"embeds":[{
             "title": f"📊 StockPilot 스크리닝 — {dt}",
-            "description": f"시가총액 상위{TOP_N} → 추천 **{len(recommended)}종목**",
-            "color": 0x00d97e if recommended else 0xff4560,
+            "description": (
+                f"시가총액 상위{TOP_N} 분석 완료\n"
+                f"✅ 추천 종목: **{len(recommended)}개** (ROE≥{FILTER_ROE}% · PER≤{FILTER_PER}배 · PBR≤{FILTER_PBR}배)"
+            ),
+            "color": 0x00d97e if recommended else 0x3399ff,
             "fields": fields,
-            "footer": {"text":"⚠️ 투자 손실 책임은 본인에게 있습니다."},
-            "timestamp": datetime.utcnow().isoformat()+"Z"
+            "footer": {"text": "⚠️ 투자 손실 책임은 본인에게 있습니다."},
+            "timestamp": datetime.utcnow().isoformat() + "Z"
         }]}, timeout=10)
-        print(f"  {'✅ Discord 전송 완료' if res.status_code==204 else f'⚠️ {res.status_code}'}")
+        print(f"  {'✅ Discord 전송 완료' if res.status_code == 204 else f'⚠️ {res.status_code}'}")
     except Exception as e:
         print(f"  ❌ Discord 실패: {e}")
 
@@ -250,7 +262,7 @@ def main():
     print(f"  최종 추천: {len(recommended)}종목")
     for r in recommended:
         print(f"  ★ {r['name']} [{r['grade']}등급 {r['score']}점]"
-              f"  ROE {r.get('roe',0):.1f}%  PER {r.get('per',0):.1f}배  PBR {r.get('pbr',0):.2f}")
+              f"  ROE {r.get('roe',0):.1f}%  PER {r.get('per',0):.1f}배")
 
     json.dump({
         "date":        date,
