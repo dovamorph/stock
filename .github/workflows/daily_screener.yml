@@ -37,6 +37,8 @@ jobs:
         run: python screener.py
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          KRX_ID: ${{ secrets.KRX_ID }}
+          KRX_PW: ${{ secrets.KRX_PW }}
 
       - name: 💾 results.json 저장소에 커밋
         run: |
