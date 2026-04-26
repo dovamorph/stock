@@ -1,8 +1,6 @@
 """
 StockPilot KR — screener.py
-KRX 직접 HTTP 요청 방식 (pykrx 미사용)
-- KRX 공개 API로 거래대금, PER, PBR 직접 수집
-- FinanceDataReader로 가격/등락률 수집
+Naver Finance API 기반 (KRX 의존성 없음, 로그인 불필요)
 """
 import os, json, time, traceback
 from datetime import datetime, timedelta
@@ -23,11 +21,9 @@ FILTER_PBR      = 1.5
 FILTER_DIV      = 3.0
 MOMENTUM_THRESH = 20.0
 
-KRX_URL = "https://data.krx.co.kr/comm/bldAttendant/getJsonData.cmd"
-KRX_HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-    "Referer": "https://data.krx.co.kr/",
-    "Content-Type": "application/x-www-form-urlencoded",
+NAVER_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36",
+    "Referer": "https://m.stock.naver.com/",
 }
 
 # ── 날짜 유틸 ─────────────────────────────────────────────────────
@@ -51,117 +47,97 @@ def to_float(v) -> float:
     except:
         return 0.0
 
-def to_int(v) -> int:
+# ── 1단계: 시가총액 상위 20 (Naver Finance) ───────────────────────
+def fetch_top20() -> list[dict]:
+    print(f"\n[1/4] 시가총액 상위 {TOP_N} 종목 조회 중...")
     try:
-        return int(str(v).replace(",", "").strip() or 0)
+        # FinanceDataReader 로 KOSPI + KOSDAQ 전체 종목 + 시가총액
+        kospi  = fdr.StockListing('KOSPI');  kospi['market']  = 'KOSPI'
+        kosdaq = fdr.StockListing('KOSDAQ'); kosdaq['market'] = 'KOSDAQ'
+        df = pd.concat([kospi, kosdaq], ignore_index=True)
+
+        # 컬럼명 정규화
+        col_map = {}
+        for c in df.columns:
+            cl = c.lower()
+            if cl in ('symbol','code','ticker'):  col_map[c] = 'Code'
+            elif cl == 'name':                    col_map[c] = 'Name'
+            elif 'marcap' in cl:                  col_map[c] = 'Marcap'
+        df = df.rename(columns=col_map)
+
+        if 'Marcap' not in df.columns:
+            # 숫자 컬럼 중 가장 큰 값이 시가총액
+            num_cols = df.select_dtypes(include='number').columns
+            if len(num_cols) > 0:
+                df['Marcap'] = df[num_cols[0]]
+
+        df['Marcap'] = pd.to_numeric(df['Marcap'], errors='coerce').fillna(0)
+        df = df[df['Marcap'] > 0].sort_values('Marcap', ascending=False).head(TOP_N).reset_index(drop=True)
+
+        result = []
+        for i, row in df.iterrows():
+            ticker = str(row.get('Code', row.iloc[0])).zfill(6)
+            result.append({
+                "rank":   i + 1,
+                "ticker": ticker,
+                "name":   str(row.get('Name', ticker)),
+                "market": str(row.get('market', 'KOSPI')),
+                "tvol":   int(row.get('Marcap', 0)) // 100000000,
+            })
+
+        print(f"  {len(result)}개 선정:")
+        for r in result[:5]:
+            print(f"    {r['rank']}. {r['name']} ({r['ticker']}) — 시총 {r['tvol']:,}억")
+        return result
+    except Exception as e:
+        print(f"  오류: {e}"); traceback.print_exc(); return []
+
+# ── 2단계: Naver 개별 종목 재무 데이터 ───────────────────────────
+def fetch_naver_fundamental(ticker: str) -> dict:
+    """Naver Finance 모바일 API — PER, PBR, 배당수익률"""
+    try:
+        url = f"https://m.stock.naver.com/api/stock/{ticker}/basic"
+        r = requests.get(url, headers=NAVER_HEADERS, timeout=5)
+        if r.status_code != 200:
+            return {}
+        d = r.json()
+        per = to_float(d.get("per", 0))
+        pbr = to_float(d.get("pbr", 0))
+        div = to_float(d.get("dividendYield", 0))
+        # ROE 근사: ROE ≈ (PBR / PER) × 100  (DuPont 근사)
+        roe = round(pbr / per * 100, 1) if per > 0 else 0.0
+        return {"per": per, "pbr": pbr, "div": div, "roe": roe}
     except:
-        return 0
+        return {}
 
-# ── 1단계: KRX 거래대금 상위 20 ──────────────────────────────────
-def fetch_top20(date: str) -> list[dict]:
-    print(f"\n[1/4] 거래대금 상위 {TOP_N} 조회 중... (기준일 {date})")
-    all_stocks = []
+# ── 3단계: 외국인 순매수 (Naver) ──────────────────────────────────
+def fetch_naver_foreign(ticker: str) -> int:
+    """Naver Finance 외국인 순매수 (억원)"""
+    try:
+        url = f"https://m.stock.naver.com/api/stock/{ticker}/investor"
+        r = requests.get(url, headers=NAVER_HEADERS, timeout=5)
+        if r.status_code != 200:
+            return 0
+        d = r.json()
+        # 외국인 순매수
+        items = d.get("investorList", [])
+        for item in items:
+            if "외국" in str(item.get("name", "")):
+                return int(to_float(item.get("netBuyVolume", 0))) // 100000000
+    except:
+        pass
+    return 0
 
-    for mkt_id, mkt_name in [("STK", "KOSPI"), ("KSQ", "KOSDAQ")]:
-        try:
-            payload = {
-                "bld": "dbms/MDC/STAT/standard/MDCSTAT01901",
-                "mktId": mkt_id,
-                "trdDd": date,
-                "share": "1",
-                "money": "1",
-                "csvxls_isNo": "false",
-            }
-            res = requests.post(KRX_URL, data=payload, headers=KRX_HEADERS, timeout=15)
-            data = res.json()
-            items = data.get("output", [])
-            print(f"  {mkt_name}: {len(items)}종목")
-            for item in items:
-                ticker = str(item.get("ISU_SRT_CD", "")).zfill(6)
-                name   = item.get("ISU_ABBRV", ticker)
-                tvol   = to_int(item.get("ACC_TRDVAL", 0))
-                close  = to_float(item.get("TDD_CLSPRC", 0))
-                if ticker and tvol > 0:
-                    all_stocks.append({
-                        "ticker": ticker,
-                        "name":   name,
-                        "market": mkt_name,
-                        "tvol":   tvol // 100000000,
-                        "close":  close,
-                    })
-        except Exception as e:
-            print(f"  {mkt_name} 오류: {e}")
-        time.sleep(0.5)
-
-    if not all_stocks:
-        print("  ❌ 거래대금 데이터 없음")
-        return []
-
-    # 거래대금 상위 TOP_N
-    df = pd.DataFrame(all_stocks)
-    df = df.sort_values("tvol", ascending=False).head(TOP_N).reset_index(drop=True)
-    result = []
-    for i, row in df.iterrows():
-        result.append({
-            "rank":   i + 1,
-            "ticker": row["ticker"],
-            "name":   row["name"],
-            "market": row["market"],
-            "tvol":   int(row["tvol"]),
-            "close":  row["close"],
-        })
-
-    print(f"  상위 {len(result)}종목:")
-    for r in result[:5]:
-        print(f"    {r['rank']}. {r['name']} ({r['ticker']}) — {r['tvol']:,}억")
-    return result
-
-# ── 2단계: KRX PER/PBR/배당 전종목 한번에 ───────────────────────
-def fetch_all_fundamentals(date: str) -> dict:
-    print(f"\n[2/4] PER/PBR/배당 전종목 조회 중...")
-    result = {}
-    for mkt_id, mkt_name in [("STK", "KOSPI"), ("KSQ", "KOSDAQ")]:
-        try:
-            payload = {
-                "bld": "dbms/MDC/STAT/standard/MDCSTAT03501",
-                "mktId": mkt_id,
-                "trdDd": date,
-                "share": "1",
-                "money": "1",
-                "csvxls_isNo": "false",
-            }
-            res = requests.post(KRX_URL, data=payload, headers=KRX_HEADERS, timeout=15)
-            data = res.json()
-            items = data.get("output", [])
-            print(f"  {mkt_name}: {len(items)}종목 재무 데이터")
-            for item in items:
-                ticker = str(item.get("ISU_SRT_CD", "")).zfill(6)
-                if not ticker:
-                    continue
-                per = to_float(item.get("PER", 0))
-                pbr = to_float(item.get("PBR", 0))
-                eps = to_float(item.get("EPS", 0))
-                bps = to_float(item.get("BPS", 0))
-                div = to_float(item.get("DVD_YLD", 0))
-                roe = round(eps / bps * 100, 1) if bps > 0 else 0.0
-                result[ticker] = {"per": per, "pbr": pbr, "roe": roe, "div": div}
-        except Exception as e:
-            print(f"  {mkt_name} 재무 오류: {e}")
-        time.sleep(0.5)
-
-    print(f"  총 {len(result)}종목 재무 데이터 수집")
-    return result
-
-# ── 3단계: 가격/등락률 (FinanceDataReader) ────────────────────────
+# ── 4단계: 가격/등락률 (FinanceDataReader) ────────────────────────
 def fetch_price(ticker: str, start: str, end: str) -> dict:
     try:
         df = fdr.DataReader(ticker, fmt(start), fmt(end))
         if df is not None and len(df) >= 2:
-            p0 = float(df.iloc[0]["Close"])
-            p1 = float(df.iloc[-1]["Close"])
+            p0 = float(df.iloc[0]['Close'])
+            p1 = float(df.iloc[-1]['Close'])
             ch20 = round((p1 - p0) / p0 * 100, 1) if p0 > 0 else 0.0
-            if "Volume" in df.columns:
-                v    = df["Volume"].astype(float)
+            if 'Volume' in df.columns:
+                v    = df['Volume'].astype(float)
                 avg5 = v.iloc[-5:].mean()
                 avgA = v.mean()
                 vol_trend = round((avg5 - avgA) / avgA * 100, 1) if avgA > 0 else 0.0
@@ -204,12 +180,13 @@ def get_grade(score: int) -> str:
 
 def apply_filters(d: dict) -> dict:
     return {
-        "vol_ok":   (d.get("vol_trend") or 0) > -10,
-        "roe_ok":   (d.get("roe") or 0) >= FILTER_ROE,
-        "per_ok":   0 < (d.get("per") or 0) <= FILTER_PER,
-        "pbr_ok":   0 < (d.get("pbr") or 0) <= FILTER_PBR,
-        "div_ok":   (d.get("div") or 0) >= FILTER_DIV,
-        "momentum": (d.get("ch20") or 0) >= MOMENTUM_THRESH,
+        "vol_ok":     (d.get("vol_trend") or 0) > -10,
+        "foreign_ok": (d.get("foreign_net") or 0) > 0,
+        "roe_ok":     (d.get("roe") or 0) >= FILTER_ROE,
+        "per_ok":     0 < (d.get("per") or 0) <= FILTER_PER,
+        "pbr_ok":     0 < (d.get("pbr") or 0) <= FILTER_PBR,
+        "div_ok":     (d.get("div") or 0) >= FILTER_DIV,
+        "momentum":   (d.get("ch20") or 0) >= MOMENTUM_THRESH,
     }
 
 # ── Discord 전송 ──────────────────────────────────────────────────
@@ -226,7 +203,7 @@ def send_discord(results: list, date: str, recommended: list):
             "name": f"{ge.get(g,'⚪')} {r['name']} ({r['market']})  {g}등급 {r['score']}점{flags}",
             "value": (
                 f"```ROE {r.get('roe',0):.1f}%  |  PER {r.get('per',0):.1f}배  |  PBR {r.get('pbr',0):.2f}```"
-                f"20일 {r.get('ch20',0):+.1f}%  ·  배당 {r.get('div',0):.1f}%  ·  거래대금 {r.get('tvol',0):,}억"
+                f"외국인 {r.get('foreign_net',0):+,}억  ·  20일 {r.get('ch20',0):+.1f}%  ·  배당 {r.get('div',0):.1f}%"
             ),
             "inline": False
         })
@@ -239,7 +216,7 @@ def send_discord(results: list, date: str, recommended: list):
     try:
         res = requests.post(DISCORD_WEBHOOK, json={"embeds":[{
             "title": f"📊 StockPilot 스크리닝 — {dt}",
-            "description": f"거래대금 상위{TOP_N} → 추천 **{len(recommended)}종목**",
+            "description": f"시가총액 상위{TOP_N} → 추천 **{len(recommended)}종목**",
             "color": 0x00d97e if recommended else 0xff4560,
             "fields": fields,
             "footer": {"text":"⚠️ 투자 손실 책임은 본인에게 있습니다."},
@@ -258,27 +235,24 @@ def main():
     start = n_days_ago(date, 30)
     print(f"  기준일: {date}  |  조회범위: {start} ~ {date}")
 
-    # 1) 거래대금 상위 20
-    tickers = fetch_top20(date)
+    # 1) 시가총액 상위 20
+    tickers = fetch_top20()
     if not tickers:
         json.dump({"date":date,"generated_at":datetime.now().isoformat(),
-                   "results":[],"recommended":[],"error":"거래대금 데이터 없음"},
+                   "results":[],"recommended":[],"error":"종목 데이터 없음"},
                   open("results.json","w",encoding="utf-8"), ensure_ascii=False)
         return
 
-    # 2) 전종목 재무 한번에
-    fund_map = fetch_all_fundamentals(date)
-
-    # 3) 종목별 가격 + 병합
-    print(f"\n[3/4] {len(tickers)}종목 가격 데이터 조회 중...\n")
+    print(f"\n[2/4] {len(tickers)}종목 재무 + 가격 조회 중...\n")
     results = []
     for t in tickers:
         tk = t["ticker"]
         print(f"  [{t['rank']:2d}] {t['name']:12s} ({tk})", end=" ... ", flush=True)
         try:
-            fund  = fund_map.get(tk, {"per":0.0,"pbr":0.0,"roe":0.0,"div":0.0})
-            price = fetch_price(tk, start, date)
-            data  = {**t, **fund, **price}
+            fund    = fetch_naver_fundamental(tk)
+            price   = fetch_price(tk, start, date)
+            foreign = fetch_naver_foreign(tk)
+            data = {**t, **fund, **price, "foreign_net": foreign}
             score   = calc_score(data)
             grade   = get_grade(score)
             filters = apply_filters(data)
@@ -286,7 +260,7 @@ def main():
                    filters["per_ok"] and filters["pbr_ok"] and score >= 50)
             data.update({"score":score,"grade":grade,"filters":filters,"recommended":rec})
             results.append(data)
-            print(f"{grade}등급 {score}점  ROE:{fund.get('roe',0):.1f}%  PER:{fund.get('per',0):.1f}  20일:{price['ch20']:+.1f}%")
+            print(f"{grade}등급 {score}점  ROE:{fund.get('roe',0):.1f}%  PER:{fund.get('per',0):.1f}  PBR:{fund.get('pbr',0):.2f}  20일:{price['ch20']:+.1f}%")
         except Exception:
             print("오류"); traceback.print_exc()
         time.sleep(0.3)
