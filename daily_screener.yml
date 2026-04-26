@@ -1,0 +1,48 @@
+# 이 파일 위치: .github/workflows/daily_screener.yml
+# GitHub 저장소에 이 파일이 있으면 자동으로 실행됩니다.
+
+name: 📊 StockPilot 자동 스크리닝
+
+on:
+  schedule:
+    # 평일 오전 09:30 KST (= UTC 00:30)
+    - cron: '30 0 * * 1-5'
+    # 평일 오후 15:40 KST (= UTC 06:40) — 장 마감 직후
+    - cron: '40 6 * * 1-5'
+  workflow_dispatch:
+    # ↑ GitHub Actions 탭에서 "Run workflow" 버튼으로 언제든 수동 실행 가능
+
+permissions:
+  contents: write   # results.json 을 저장소에 커밋하기 위해 필요
+
+jobs:
+  run-screener:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: 📥 저장소 체크아웃
+        uses: actions/checkout@v4
+
+      - name: 🐍 Python 3.11 설정
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: 📦 패키지 설치
+        run: pip install -r requirements.txt
+
+      - name: 🔍 스크리닝 실행
+        run: python screener.py
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+
+      - name: 💾 results.json 저장소에 커밋
+        run: |
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --local user.name  "github-actions[bot]"
+          git add results.json
+          # 변경사항이 있을 때만 커밋 (없으면 스킵)
+          git diff --staged --quiet || git commit -m "📊 스크리닝 업데이트 $(date +'%Y-%m-%d %H:%M KST' -d '+9 hours')"
+          git push
