@@ -1,6 +1,8 @@
 """
 StockPilot KR — screener.py
-Naver Finance API 기반 (KRX 의존성 없음, 로그인 불필요)
+- 종목 리스트: FinanceDataReader (시가총액 상위 20)
+- 재무 데이터: yfinance (PER/PBR/ROE/배당, IP 차단 없음)
+- 가격 데이터: FinanceDataReader
 """
 import os, json, time, traceback
 from datetime import datetime, timedelta
@@ -8,6 +10,7 @@ from datetime import datetime, timedelta
 try:
     import pandas as pd
     import requests
+    import yfinance as yf
     import FinanceDataReader as fdr
 except ImportError:
     print("pip install -r requirements.txt 먼저 실행하세요")
@@ -20,11 +23,6 @@ FILTER_PER      = 15.0
 FILTER_PBR      = 1.5
 FILTER_DIV      = 3.0
 MOMENTUM_THRESH = 20.0
-
-NAVER_HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36",
-    "Referer": "https://m.stock.naver.com/",
-}
 
 # ── 날짜 유틸 ─────────────────────────────────────────────────────
 def last_trading_day() -> str:
@@ -41,35 +39,33 @@ def n_days_ago(base: str, n: int = 30) -> str:
 def fmt(d: str) -> str:
     return f"{d[:4]}-{d[4:6]}-{d[6:]}"
 
-def to_float(v) -> float:
+def safe_float(v, default=0.0) -> float:
     try:
-        return float(str(v).replace(",", "").strip() or 0)
+        val = float(v or 0)
+        return val if val == val else default  # NaN 체크
     except:
-        return 0.0
+        return default
 
-# ── 1단계: 시가총액 상위 20 (Naver Finance) ───────────────────────
+# ── 1단계: 시가총액 상위 20 ──────────────────────────────────────
 def fetch_top20() -> list[dict]:
-    print(f"\n[1/4] 시가총액 상위 {TOP_N} 종목 조회 중...")
+    print(f"\n[1/4] 시가총액 상위 {TOP_N} 조회 중...")
     try:
-        # FinanceDataReader 로 KOSPI + KOSDAQ 전체 종목 + 시가총액
         kospi  = fdr.StockListing('KOSPI');  kospi['market']  = 'KOSPI'
         kosdaq = fdr.StockListing('KOSDAQ'); kosdaq['market'] = 'KOSDAQ'
         df = pd.concat([kospi, kosdaq], ignore_index=True)
 
-        # 컬럼명 정규화
+        # 컬럼 정규화
         col_map = {}
         for c in df.columns:
             cl = c.lower()
-            if cl in ('symbol','code','ticker'):  col_map[c] = 'Code'
-            elif cl == 'name':                    col_map[c] = 'Name'
-            elif 'marcap' in cl:                  col_map[c] = 'Marcap'
+            if cl in ('symbol','code','ticker'): col_map[c] = 'Code'
+            elif cl == 'name':                   col_map[c] = 'Name'
+            elif 'marcap' in cl:                 col_map[c] = 'Marcap'
         df = df.rename(columns=col_map)
 
         if 'Marcap' not in df.columns:
-            # 숫자 컬럼 중 가장 큰 값이 시가총액
-            num_cols = df.select_dtypes(include='number').columns
-            if len(num_cols) > 0:
-                df['Marcap'] = df[num_cols[0]]
+            num = df.select_dtypes(include='number').columns
+            if len(num): df['Marcap'] = df[num[0]]
 
         df['Marcap'] = pd.to_numeric(df['Marcap'], errors='coerce').fillna(0)
         df = df[df['Marcap'] > 0].sort_values('Marcap', ascending=False).head(TOP_N).reset_index(drop=True)
@@ -77,12 +73,14 @@ def fetch_top20() -> list[dict]:
         result = []
         for i, row in df.iterrows():
             ticker = str(row.get('Code', row.iloc[0])).zfill(6)
+            market = str(row.get('market', 'KOSPI'))
             result.append({
                 "rank":   i + 1,
                 "ticker": ticker,
                 "name":   str(row.get('Name', ticker)),
-                "market": str(row.get('market', 'KOSPI')),
+                "market": market,
                 "tvol":   int(row.get('Marcap', 0)) // 100000000,
+                "suffix": ".KS" if market == "KOSPI" else ".KQ",
             })
 
         print(f"  {len(result)}개 선정:")
@@ -92,43 +90,27 @@ def fetch_top20() -> list[dict]:
     except Exception as e:
         print(f"  오류: {e}"); traceback.print_exc(); return []
 
-# ── 2단계: Naver 개별 종목 재무 데이터 ───────────────────────────
-def fetch_naver_fundamental(ticker: str) -> dict:
-    """Naver Finance 모바일 API — PER, PBR, 배당수익률"""
+# ── 2단계: yfinance 재무 데이터 ───────────────────────────────────
+def fetch_yfinance(ticker: str, suffix: str) -> dict:
+    """Yahoo Finance로 PER/PBR/ROE/배당 가져오기"""
+    result = {"per": 0.0, "pbr": 0.0, "roe": 0.0, "div": 0.0}
     try:
-        url = f"https://m.stock.naver.com/api/stock/{ticker}/basic"
-        r = requests.get(url, headers=NAVER_HEADERS, timeout=5)
-        if r.status_code != 200:
-            return {}
-        d = r.json()
-        per = to_float(d.get("per", 0))
-        pbr = to_float(d.get("pbr", 0))
-        div = to_float(d.get("dividendYield", 0))
-        # ROE 근사: ROE ≈ (PBR / PER) × 100  (DuPont 근사)
-        roe = round(pbr / per * 100, 1) if per > 0 else 0.0
-        return {"per": per, "pbr": pbr, "div": div, "roe": roe}
-    except:
-        return {}
+        yf_ticker = f"{ticker}{suffix}"
+        info = yf.Ticker(yf_ticker).info
 
-# ── 3단계: 외국인 순매수 (Naver) ──────────────────────────────────
-def fetch_naver_foreign(ticker: str) -> int:
-    """Naver Finance 외국인 순매수 (억원)"""
-    try:
-        url = f"https://m.stock.naver.com/api/stock/{ticker}/investor"
-        r = requests.get(url, headers=NAVER_HEADERS, timeout=5)
-        if r.status_code != 200:
-            return 0
-        d = r.json()
-        # 외국인 순매수
-        items = d.get("investorList", [])
-        for item in items:
-            if "외국" in str(item.get("name", "")):
-                return int(to_float(item.get("netBuyVolume", 0))) // 100000000
-    except:
-        pass
-    return 0
+        per = safe_float(info.get("trailingPE") or info.get("forwardPE") or 0)
+        pbr = safe_float(info.get("priceToBook", 0))
+        roe_raw = info.get("returnOnEquity", 0)
+        roe = safe_float(roe_raw * 100 if roe_raw else 0)
+        div_raw = info.get("dividendYield", 0)
+        div = safe_float(div_raw * 100 if div_raw else 0)
 
-# ── 4단계: 가격/등락률 (FinanceDataReader) ────────────────────────
+        result = {"per": per, "pbr": pbr, "roe": roe, "div": div}
+    except Exception as e:
+        print(f"    yfinance 오류: {e}")
+    return result
+
+# ── 3단계: 가격/등락률 ────────────────────────────────────────────
 def fetch_price(ticker: str, start: str, end: str) -> dict:
     try:
         df = fdr.DataReader(ticker, fmt(start), fmt(end))
@@ -137,7 +119,7 @@ def fetch_price(ticker: str, start: str, end: str) -> dict:
             p1 = float(df.iloc[-1]['Close'])
             ch20 = round((p1 - p0) / p0 * 100, 1) if p0 > 0 else 0.0
             if 'Volume' in df.columns:
-                v    = df['Volume'].astype(float)
+                v = df['Volume'].astype(float)
                 avg5 = v.iloc[-5:].mean()
                 avgA = v.mean()
                 vol_trend = round((avg5 - avgA) / avgA * 100, 1) if avgA > 0 else 0.0
@@ -180,13 +162,12 @@ def get_grade(score: int) -> str:
 
 def apply_filters(d: dict) -> dict:
     return {
-        "vol_ok":     (d.get("vol_trend") or 0) > -10,
-        "foreign_ok": (d.get("foreign_net") or 0) > 0,
-        "roe_ok":     (d.get("roe") or 0) >= FILTER_ROE,
-        "per_ok":     0 < (d.get("per") or 0) <= FILTER_PER,
-        "pbr_ok":     0 < (d.get("pbr") or 0) <= FILTER_PBR,
-        "div_ok":     (d.get("div") or 0) >= FILTER_DIV,
-        "momentum":   (d.get("ch20") or 0) >= MOMENTUM_THRESH,
+        "vol_ok":   (d.get("vol_trend") or 0) > -10,
+        "roe_ok":   (d.get("roe") or 0) >= FILTER_ROE,
+        "per_ok":   0 < (d.get("per") or 0) <= FILTER_PER,
+        "pbr_ok":   0 < (d.get("pbr") or 0) <= FILTER_PBR,
+        "div_ok":   (d.get("div") or 0) >= FILTER_DIV,
+        "momentum": (d.get("ch20") or 0) >= MOMENTUM_THRESH,
     }
 
 # ── Discord 전송 ──────────────────────────────────────────────────
@@ -203,7 +184,7 @@ def send_discord(results: list, date: str, recommended: list):
             "name": f"{ge.get(g,'⚪')} {r['name']} ({r['market']})  {g}등급 {r['score']}점{flags}",
             "value": (
                 f"```ROE {r.get('roe',0):.1f}%  |  PER {r.get('per',0):.1f}배  |  PBR {r.get('pbr',0):.2f}```"
-                f"외국인 {r.get('foreign_net',0):+,}억  ·  20일 {r.get('ch20',0):+.1f}%  ·  배당 {r.get('div',0):.1f}%"
+                f"20일 {r.get('ch20',0):+.1f}%  ·  배당 {r.get('div',0):.1f}%  ·  시총 {r.get('tvol',0):,}억"
             ),
             "inline": False
         })
@@ -235,7 +216,6 @@ def main():
     start = n_days_ago(date, 30)
     print(f"  기준일: {date}  |  조회범위: {start} ~ {date}")
 
-    # 1) 시가총액 상위 20
     tickers = fetch_top20()
     if not tickers:
         json.dump({"date":date,"generated_at":datetime.now().isoformat(),
@@ -246,13 +226,13 @@ def main():
     print(f"\n[2/4] {len(tickers)}종목 재무 + 가격 조회 중...\n")
     results = []
     for t in tickers:
-        tk = t["ticker"]
-        print(f"  [{t['rank']:2d}] {t['name']:12s} ({tk})", end=" ... ", flush=True)
+        tk     = t["ticker"]
+        suffix = t.get("suffix", ".KS")
+        print(f"  [{t['rank']:2d}] {t['name']:12s} ({tk}{suffix})", end=" ... ", flush=True)
         try:
-            fund    = fetch_naver_fundamental(tk)
-            price   = fetch_price(tk, start, date)
-            foreign = fetch_naver_foreign(tk)
-            data = {**t, **fund, **price, "foreign_net": foreign}
+            fund  = fetch_yfinance(tk, suffix)
+            price = fetch_price(tk, start, date)
+            data  = {**t, **fund, **price}
             score   = calc_score(data)
             grade   = get_grade(score)
             filters = apply_filters(data)
@@ -263,7 +243,7 @@ def main():
             print(f"{grade}등급 {score}점  ROE:{fund.get('roe',0):.1f}%  PER:{fund.get('per',0):.1f}  PBR:{fund.get('pbr',0):.2f}  20일:{price['ch20']:+.1f}%")
         except Exception:
             print("오류"); traceback.print_exc()
-        time.sleep(0.3)
+        time.sleep(0.5)
 
     recommended = [r for r in results if r.get("recommended")]
     print(f"\n{'─'*60}")
