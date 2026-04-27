@@ -1,6 +1,8 @@
 """
-StockPilot KR — screener.py (KIS OpenAPI)
-거래대금 상위 30 / PER / PBR / ROE / EPS / PSR / 배당 / 외국인순매수 / 20일등락
+StockPilot KR — KIS OpenAPI 기반 스크리닝
+1. 거래대금 상위 30 (KIS 랭킹 API)
+2. 외국인 순매수
+3. ROE≥15% / PER≤15배 / PBR / PSR≤3배 / EPS상승 / 배당선호
 """
 import os, json, time, traceback
 from datetime import datetime, timedelta
@@ -8,229 +10,348 @@ from datetime import datetime, timedelta
 try:
     import requests, pandas as pd
 except ImportError:
-    print("pip install -r requirements.txt"); exit(1)
+    print("pip install requests pandas"); exit(1)
 
-APP_KEY     = os.environ.get("KIS_APP_KEY","")
-APP_SECRET  = os.environ.get("KIS_APP_SECRET","")
-DISCORD_URL = os.environ.get("DISCORD_WEBHOOK","")
-BASE_URL    = "https://openapi.koreainvestment.com:9443"
+APP_KEY    = os.environ.get("KIS_APP_KEY", "")
+APP_SECRET = os.environ.get("KIS_APP_SECRET", "")
+DISCORD    = os.environ.get("DISCORD_WEBHOOK", "")
+BASE       = "https://openapi.koreainvestment.com:9443"
 
-TOP_N=30; FILTER_ROE=15.0; FILTER_PER=15.0; FILTER_PBR=1.5
-FILTER_PSR=3.0; FILTER_EPS=1.0; FILTER_DIV=3.0
+TOP_N = 30
+ETF_KW = ["ETF","ETN","KODEX","TIGER","KBSTAR","ARIRANG","HANARO","SOL","ACE","RISE",
+          "레버리지","인버스","선물","PLUS","TIMEFOLIO"]
 
-def sf(v,d=0.0):
-    try: val=float(str(v).replace(",","").strip() or 0); return d if val!=val else val
+def sf(v, d=0.0):
+    try:
+        s = str(v).replace(",","").strip()
+        val = float(s) if s else d
+        return d if val != val else val
     except: return d
 
+# ── 토큰 ──────────────────────────────────────────────────────────
 def get_token():
-    r=requests.post(f"{BASE_URL}/oauth2/tokenP",
-        json={"grant_type":"client_credentials","appkey":APP_KEY,"appsecret":APP_SECRET},timeout=10)
-    r.raise_for_status(); print("  ✅ KIS 토큰 발급 완료"); return r.json().get("access_token","")
+    r = requests.post(f"{BASE}/oauth2/tokenP", timeout=15, json={
+        "grant_type":"client_credentials","appkey":APP_KEY,"appsecret":APP_SECRET})
+    r.raise_for_status()
+    tok = r.json().get("access_token","")
+    if not tok: raise ValueError("토큰 없음")
+    print("  ✅ KIS 토큰 발급 완료")
+    return tok
 
-def hdr(token,tr_id):
-    return {"Content-Type":"application/json","authorization":f"Bearer {token}",
+def H(tok, tr_id):
+    return {"Content-Type":"application/json","authorization":f"Bearer {tok}",
             "appkey":APP_KEY,"appsecret":APP_SECRET,"tr_id":tr_id,"custtype":"P"}
 
-ETF_NAMES=["ETF","ETN","KODEX","TIGER","레버리지","인버스","선물","RISE","ACE","KBSTAR","ARIRANG","HANARO","SOL","PLUS"]
+def is_etf(name): return any(k in name for k in ETF_KW)
 
-def fetch_top30(token):
+# ── 1단계: 거래대금 상위 30 ──────────────────────────────────────
+def fetch_top30(tok):
     print(f"\n[1/4] 거래대금 상위 {TOP_N} 조회...")
-    stocks=[]
-    for iscd,mkt in [("0001","KOSPI"),("1001","KOSDAQ")]:
-        try:
-            r=requests.get(f"{BASE_URL}/uapi/domestic-stock/v1/ranking/volume",
-                headers=hdr(token,"FHPST01710000"),timeout=10,
-                params={"fid_cond_mrkt_div_code":"J","fid_cond_scr_div_code":"20171",
-                        "fid_input_iscd":iscd,"fid_div_cls_code":"1","fid_blng_cls_code":"0",
-                        "fid_trgt_cls_code":"111111111","fid_trgt_exls_cls_code":"000000",
-                        "fid_input_price_1":"","fid_input_price_2":"","fid_vol_cnt":"","fid_input_date_1":""})
-            data=r.json()
-            if data.get("rt_cd")!="0": raise ValueError(data.get("msg1",""))
-            cnt=0
-            for item in data.get("output",[]):
-                name=str(item.get("hts_kor_isnm","")).strip()
-                ticker=str(item.get("mksc_shrn_iscd","")).strip()
-                tvol=sf(item.get("acml_tr_pbmn",0))
-                if not name or not ticker: continue
-                if any(k in name for k in ETF_NAMES): continue
-                stocks.append({"ticker":ticker,"name":name,"market":mkt,"tvol":int(tvol)//100000000})
-                cnt+=1
-            print(f"  {mkt}: {cnt}종목")
-        except Exception as e:
-            print(f"  {mkt} 오류: {e}")
-        time.sleep(0.5)
+    stocks = []
 
-    if not stocks: return []
-    df=pd.DataFrame(stocks).drop_duplicates("ticker").sort_values("tvol",ascending=False).head(TOP_N).reset_index(drop=True)
-    result=[{"rank":i+1,"ticker":r.ticker,"name":r.name,"market":r.market,"tvol":int(r.tvol)} for i,r in df.iterrows()]
-    print(f"\n  상위 {len(result)}종목:")
+    # KIS 거래량 순위 API (FHPST01710000)
+    for mkt_code, mkt_name in [("J","KOSPI+KOSDAQ")]:
+        try:
+            r = requests.get(f"{BASE}/uapi/domestic-stock/v1/ranking/volume",
+                headers=H(tok,"FHPST01710000"), timeout=15,
+                params={
+                    "fid_cond_mrkt_div_code": mkt_code,
+                    "fid_cond_scr_div_code":  "20171",
+                    "fid_input_iscd":         "0000",   # 전체
+                    "fid_div_cls_code":       "1",      # 거래대금 기준
+                    "fid_blng_cls_code":      "0",
+                    "fid_trgt_cls_code":      "111111111",
+                    "fid_trgt_exls_cls_code": "000000",
+                    "fid_input_price_1":      "",
+                    "fid_input_price_2":      "",
+                    "fid_vol_cnt":            "",
+                    "fid_input_date_1":       "",
+                })
+            data = r.json()
+            print(f"  API 응답: rt_cd={data.get('rt_cd')} msg={data.get('msg1','')[:50]}")
+
+            if data.get("rt_cd") == "0":
+                for item in data.get("output", []):
+                    name   = str(item.get("hts_kor_isnm","")).strip()
+                    ticker = str(item.get("mksc_shrn_iscd","")).strip()
+                    tvol   = sf(item.get("acml_tr_pbmn", 0))
+                    mkt    = "KOSDAQ" if str(item.get("bstp_cls_code","")).startswith("Q") else "KOSPI"
+                    if not name or not ticker or is_etf(name): continue
+                    stocks.append({"ticker":ticker,"name":name,"market":mkt,"tvol":int(tvol)//100000000})
+                print(f"  랭킹 API 성공: {len(stocks)}종목")
+            else:
+                raise ValueError(f"rt_cd={data.get('rt_cd')}")
+        except Exception as e:
+            print(f"  랭킹 API 실패: {e}")
+            # Fallback: KOSPI/KOSDAQ 따로 조회
+            stocks = fetch_by_market(tok)
+
+    if not stocks:
+        print("  ❌ 거래대금 데이터 없음")
+        return []
+
+    df = (pd.DataFrame(stocks).drop_duplicates("ticker")
+            .sort_values("tvol", ascending=False)
+            .head(TOP_N).reset_index(drop=True))
+    result = [{"rank":i+1,"ticker":r.ticker,"name":r.name,"market":r.market,"tvol":int(r.tvol)}
+               for i,r in df.iterrows()]
+    print(f"\n  거래대금 상위 {len(result)}종목:")
     for r in result[:5]: print(f"    {r['rank']:2d}. {r['name']} ({r['market']}) — {r['tvol']:,}억")
     return result
 
-def fetch_info(token,ticker):
-    r={"per":0.,"pbr":0.,"eps":0.,"bps":0.,"div":0.,"roe":0.,"close":0.}
+def fetch_by_market(tok):
+    """Fallback: 시장별로 랭킹 API 재시도"""
+    stocks = []
+    for iscd, mkt in [("0001","KOSPI"),("1001","KOSDAQ")]:
+        try:
+            r = requests.get(f"{BASE}/uapi/domestic-stock/v1/ranking/volume",
+                headers=H(tok,"FHPST01710000"), timeout=15,
+                params={
+                    "fid_cond_mrkt_div_code":"J","fid_cond_scr_div_code":"20171",
+                    "fid_input_iscd":iscd,"fid_div_cls_code":"1","fid_blng_cls_code":"0",
+                    "fid_trgt_cls_code":"111111111","fid_trgt_exls_cls_code":"000000",
+                    "fid_input_price_1":"","fid_input_price_2":"","fid_vol_cnt":"","fid_input_date_1":"",
+                })
+            data = r.json()
+            if data.get("rt_cd") == "0":
+                for item in data.get("output",[]):
+                    name   = str(item.get("hts_kor_isnm","")).strip()
+                    ticker = str(item.get("mksc_shrn_iscd","")).strip()
+                    tvol   = sf(item.get("acml_tr_pbmn",0))
+                    if not name or not ticker or is_etf(name): continue
+                    stocks.append({"ticker":ticker,"name":name,"market":mkt,"tvol":int(tvol)//100000000})
+                print(f"  {mkt} fallback: {len([s for s in stocks if s['market']==mkt])}종목")
+        except Exception as e:
+            print(f"  {mkt} fallback 오류: {e}")
+        time.sleep(0.3)
+    return stocks
+
+# ── 2단계: 현재가 (PER/PBR/EPS/배당/ROE) ─────────────────────────
+def fetch_price(tok, ticker):
+    r = {"per":0.,"pbr":0.,"eps":0.,"bps":0.,"div":0.,"roe":0.,"close":0.}
     try:
-        res=requests.get(f"{BASE_URL}/uapi/domestic-stock/v1/quotations/inquire-price",
-            headers=hdr(token,"FHKST01010100"),timeout=10,
+        res = requests.get(f"{BASE}/uapi/domestic-stock/v1/quotations/inquire-price",
+            headers=H(tok,"FHKST01010100"), timeout=10,
             params={"fid_cond_mrkt_div_code":"J","fid_input_iscd":ticker})
-        o=res.json().get("output",{})
-        r["close"]=sf(o.get("stck_prpr")); r["per"]=sf(o.get("per")); r["pbr"]=sf(o.get("pbr"))
-        r["eps"]=sf(o.get("eps")); r["bps"]=sf(o.get("bps")); r["div"]=sf(o.get("d_rate"))
+        o = res.json().get("output",{})
+        r["close"]=sf(o.get("stck_prpr")); r["per"]=sf(o.get("per"))
+        r["pbr"]=sf(o.get("pbr")); r["eps"]=sf(o.get("eps"))
+        r["bps"]=sf(o.get("bps")); r["div"]=sf(o.get("d_rate"))
         if r["bps"]>0: r["roe"]=round(r["eps"]/r["bps"]*100,1)
-    except Exception as e: print(f"    정보오류:{e}")
+    except Exception as e: print(f"    현재가오류:{e}")
     return r
 
-def fetch_foreign(token,ticker):
-    r={"foreign_net":0,"foreign_ok":False}
+# ── 3단계: 외국인 순매수 ──────────────────────────────────────────
+def fetch_fgn(tok, ticker):
+    r = {"foreign_net":0,"foreign_ok":False}
     try:
-        res=requests.get(f"{BASE_URL}/uapi/domestic-stock/v1/quotations/inquire-investor",
-            headers=hdr(token,"FHKST01010900"),timeout=10,
+        res = requests.get(f"{BASE}/uapi/domestic-stock/v1/quotations/inquire-investor",
+            headers=H(tok,"FHKST01010900"), timeout=10,
             params={"fid_cond_mrkt_div_code":"J","fid_input_iscd":ticker})
-        items=res.json().get("output",[])
+        items = res.json().get("output",[])
         if items:
-            net=sf(items[0].get("frgn_ntby_qty",0)); r["foreign_net"]=int(net); r["foreign_ok"]=net>0
+            net=sf(items[0].get("frgn_ntby_qty",0))
+            r["foreign_net"]=int(net); r["foreign_ok"]=net>0
     except Exception as e: print(f"    외국인오류:{e}")
     return r
 
-def fetch_psr(token,ticker,close):
+# ── 4단계: EPS 추세 ───────────────────────────────────────────────
+def fetch_eps_trend(tok, ticker, cur_eps):
+    r = {"eps_trend":"데이터없음","eps_growth":0.}
     try:
-        res=requests.get(f"{BASE_URL}/uapi/domestic-stock/v1/finance/income-statement",
-            headers=hdr(token,"FHKST66430200"),timeout=10,
+        res = requests.get(f"{BASE}/uapi/domestic-stock/v1/finance/financial-ratio",
+            headers=H(tok,"FHKST66430300"), timeout=10,
             params={"fid_cond_mrkt_div_code":"J","fid_input_iscd":ticker,"fid_div_cls_code":"1"})
-        items=res.json().get("output",[])
+        items = res.json().get("output",[])
+        ev = [sf(x.get("eps")) for x in items[:3] if sf(x.get("eps"))!=0]
+        if len(ev)>=2:
+            growing=all(ev[i]>=ev[i+1] for i in range(len(ev)-1))
+            if growing and ev[0]>=1:
+                r["eps_trend"]="상승"
+                r["eps_growth"]=round((ev[0]-ev[1])/abs(ev[1])*100,1) if ev[1]!=0 else 0.
+            elif ev[0]>=1: r["eps_trend"]="유지"
+            else: r["eps_trend"]="부진"
+        else: r["eps_trend"]="유지" if cur_eps>=1 else "부진"
+    except: r["eps_trend"]="유지" if cur_eps>=1 else "부진"
+    return r
+
+# ── 5단계: PSR ────────────────────────────────────────────────────
+def fetch_psr(tok, ticker, close):
+    try:
+        res = requests.get(f"{BASE}/uapi/domestic-stock/v1/finance/income-statement",
+            headers=H(tok,"FHKST66430200"), timeout=10,
+            params={"fid_cond_mrkt_div_code":"J","fid_input_iscd":ticker,"fid_div_cls_code":"1"})
+        items = res.json().get("output",[])
         if items:
             rev=sf(items[0].get("sale_account",0))
             if rev>0:
-                res2=requests.get(f"{BASE_URL}/uapi/domestic-stock/v1/quotations/inquire-price",
-                    headers=hdr(token,"FHKST01010100"),timeout=10,
+                res2=requests.get(f"{BASE}/uapi/domestic-stock/v1/quotations/inquire-price",
+                    headers=H(tok,"FHKST01010100"), timeout=10,
                     params={"fid_cond_mrkt_div_code":"J","fid_input_iscd":ticker})
                 shares=sf(res2.json().get("output",{}).get("lstn_stcn",0))
-                if shares>0 and close>0: return round((close*shares)/(rev*1_000_000),2)
+                if shares>0 and close>0:
+                    return round((close*shares)/(rev*1_000_000),2)
     except: pass
     return 0.
 
-def fetch_eps_trend(token,ticker,cur_eps):
-    r={"eps_trend":"데이터없음","eps_growth":0.}
+# ── 6단계: 20일 등락 ──────────────────────────────────────────────
+def fetch_ch20(tok, ticker):
+    r = {"ch20":0.,"vol_trend":0.}
     try:
-        res=requests.get(f"{BASE_URL}/uapi/domestic-stock/v1/finance/financial-ratio",
-            headers=hdr(token,"FHKST66430300"),timeout=10,
-            params={"fid_cond_mrkt_div_code":"J","fid_input_iscd":ticker,"fid_div_cls_code":"1"})
-        items=res.json().get("output",[])
-        ev=[sf(x.get("eps")) for x in items[:3] if sf(x.get("eps"))!=0]
-        if len(ev)>=2:
-            growing=all(ev[i]>=ev[i+1] for i in range(len(ev)-1))
-            if growing and ev[0]>=FILTER_EPS:
-                gr=((ev[0]-ev[1])/abs(ev[1])*100) if ev[1]!=0 else 0
-                r["eps_trend"]="상승"; r["eps_growth"]=round(gr,1)
-            elif ev[0]>=FILTER_EPS: r["eps_trend"]="유지"
-            else: r["eps_trend"]="부진"
-        else: r["eps_trend"]="유지" if cur_eps>=FILTER_EPS else "부진"
-    except: r["eps_trend"]="유지" if cur_eps>=FILTER_EPS else "부진"
-    return r
-
-def fetch_ch20(token,ticker):
-    r={"ch20":0.,"vol_trend":0.}
-    try:
-        now=datetime.now(); start=(now-timedelta(days=45)).strftime("%Y%m%d"); end=now.strftime("%Y%m%d")
-        res=requests.get(f"{BASE_URL}/uapi/domestic-stock/v1/quotations/inquire-daily-price",
-            headers=hdr(token,"FHKST01010400"),timeout=10,
+        now=datetime.now()
+        s=(now-timedelta(days=45)).strftime("%Y%m%d"); e=now.strftime("%Y%m%d")
+        res=requests.get(f"{BASE}/uapi/domestic-stock/v1/quotations/inquire-daily-price",
+            headers=H(tok,"FHKST01010400"), timeout=10,
             params={"fid_cond_mrkt_div_code":"J","fid_input_iscd":ticker,
                     "fid_org_adj_prc":"1","fid_period_div_code":"D",
-                    "fid_input_date_1":start,"fid_input_date_2":end})
+                    "fid_input_date_1":s,"fid_input_date_2":e})
         items=res.json().get("output2",res.json().get("output",[]))
         prices=[sf(x.get("stck_clpr")) for x in items if sf(x.get("stck_clpr"))>0]
         if len(prices)>=20:
             r["ch20"]=round((prices[0]-prices[19])/prices[19]*100,1) if prices[19]>0 else 0.
             vols=[sf(x.get("acml_vol")) for x in items[:20]]
-            avg5=sum(vols[:5])/5 if vols[:5] else 0; avgA=sum(vols)/len(vols) if vols else 0
+            avg5=sum(vols[:5])/5 if vols[:5] else 0
+            avgA=sum(vols)/len(vols) if vols else 0
             r["vol_trend"]=round((avg5-avgA)/avgA*100,1) if avgA>0 else 0.
-    except Exception as e: print(f"    20일오류:{e}")
+    except: pass
     return r
 
+# ── 추천 판단 ─────────────────────────────────────────────────────
 def judge(d):
-    per=d.get("per",0) or 0; pbr=d.get("pbr",0) or 0; roe=d.get("roe",0) or 0
-    eps=d.get("eps",0) or 0; psr=d.get("psr",0) or 0; div=d.get("div",0) or 0
-    f={
-        "roe_ok":roe>=FILTER_ROE,"per_ok":0<per<=FILTER_PER,"pbr_ok":0<pbr<=FILTER_PBR,
-        "psr_ok":psr==0 or psr<=FILTER_PSR,"eps_ok":eps>=FILTER_EPS,
-        "eps_growing":d.get("eps_trend","")=="상승","div_ok":div>=FILTER_DIV,
-        "foreign_ok":d.get("foreign_ok",False),"momentum":(d.get("ch20") or 0)>=20.
-    }
-    core=[f["roe_ok"],f["per_ok"],f["eps_ok"],f["eps_growing"],f["psr_ok"]]
-    if pbr>0: core.append(f["pbr_ok"])
-    pc=sum(core); tot=len(core)
-    return {**f,"pass_count":pc,"total":tot,"recommended":pc>=tot-1}
+    per=d.get("per",0) or 0; pbr=d.get("pbr",0) or 0
+    roe=d.get("roe",0) or 0; eps=d.get("eps",0) or 0
+    psr=d.get("psr",0) or 0; div=d.get("div",0) or 0
+    eps_trend=d.get("eps_trend","")
 
-def send_discord(results,date,recommended):
-    if not DISCORD_URL: print("  ℹ️ DISCORD 미설정"); return
+    checks = {
+        "roe_ok":    roe>=15,
+        "per_ok":    0<per<=15,
+        "pbr_ok":    0<pbr<=1.5,
+        "psr_ok":    psr==0 or psr<=3,
+        "psr_good":  0<psr<=1.5,
+        "eps_ok":    eps>=1,
+        "eps_up":    eps_trend=="상승",
+        "div_ok":    div>=3,
+        "fgn_ok":    d.get("foreign_ok",False),
+        "momentum":  (d.get("ch20") or 0)>=20,
+    }
+    # 핵심 조건
+    core = [checks["roe_ok"], checks["per_ok"], checks["eps_ok"],
+            checks["eps_up"], checks["psr_ok"]]
+    if pbr>0: core.append(checks["pbr_ok"])
+    pc=sum(core); tot=len(core)
+    return {**checks,"pass_count":pc,"total":tot,"recommended":pc>=tot-1}
+
+# ── Discord ───────────────────────────────────────────────────────
+def send_discord(results, date, recs):
+    if not DISCORD: print("  ℹ️ DISCORD 미설정"); return
     dt=f"{date[:4]}.{date[4:6]}.{date[6:]}"
     ei={"상승":"📈","유지":"➡️","부진":"📉","데이터없음":"❓"}
-    display=recommended[:5] if recommended else sorted(results,key=lambda x:x.get("pass_count",0),reverse=True)[:5]
+
+    display = recs[:5] if recs else sorted(results,key=lambda x:x.get("pass_count",0),reverse=True)[:5]
+
     lines=[
         f"📊 **StockPilot KR — {dt}** (KIS 실시간)",
-        f"거래대금 상위{TOP_N} | ROE≥{FILTER_ROE}% PER≤{FILTER_PER}배 PBR≤{FILTER_PBR} PSR≤{FILTER_PSR}배 EPS상승",
-        f"✅ 추천: **{len(recommended)}종목**","",
-        "⭐ **추천 종목**" if recommended else "📊 **조건 상위 종목**","─"*30,
+        f"거래대금 상위{TOP_N} | ROE≥15% · PER≤15배 · PBR≤1.5 · PSR≤3배 · EPS상승",
+        f"✅ 추천: **{len(recs)}종목**", "",
+        "⭐ **추천 종목**" if recs else "📊 **조건 상위 종목** (추천 미충족)",
+        "─"*30,
     ]
     for r in display:
-        f=r.get("filters",{}); is_rec=r.get("recommended",False); pc=r.get("pass_count",0); tot=r.get("total",5)
-        lines.append(f"{'⭐ ' if is_rec else ''}**{r['name']}** ({r['market']}) — 조건 {pc}/{tot}")
-        lines.append(f"  ROE {r.get('roe',0):.1f}%  PER {r.get('per',0):.1f}배  PBR {r.get('pbr',0):.2f}  PSR {r.get('psr',0):.1f}배  배당 {r.get('div',0):.1f}%")
+        f=r.get("filters",{}); pc=r.get("pass_count",0); tot=r.get("total",5)
+        star="⭐ " if r.get("recommended") else ""
         eps_t=r.get("eps_trend","데이터없음"); eps_g=r.get("eps_growth",0)
-        lines.append(f"  {ei.get(eps_t,'❓')} EPS {r.get('eps',0):,.0f}원{f'({eps_g:+.1f}%)' if eps_g else ''} ({eps_t})  외국인{'✅' if f.get('foreign_ok') else '❌'}")
-        lines.append(f"  {'📈' if r.get('ch20',0)>0 else '📉'} 20일 {r.get('ch20',0):+.1f}%  거래대금 {r.get('tvol',0):,}억")
+        lines.append(f"{star}**{r['name']}** ({r['market']}) — 조건 {pc}/{tot} 충족")
+        lines.append(
+            f"  ROE {r.get('roe',0):.1f}%  PER {r.get('per',0):.1f}배  "
+            f"PBR {r.get('pbr',0):.2f}  PSR {r.get('psr',0):.1f}배  배당 {r.get('div',0):.1f}%")
+        lines.append(
+            f"  {ei.get(eps_t,'❓')} EPS {r.get('eps',0):,.0f}원"
+            f"{f'({eps_g:+.1f}%)' if eps_g else ''} ({eps_t})"
+            f"  외국인{'✅' if f.get('fgn_ok') else '❌'}")
+        lines.append(
+            f"  {'📈' if r.get('ch20',0)>0 else '📉'} 20일 {r.get('ch20',0):+.1f}%"
+            f"  거래대금 {r.get('tvol',0):,}억")
         lines.append("")
     lines.append("⚠️ 투자 손실 책임은 본인에게 있습니다.")
+
     msg="\n".join(lines)
     chunks=[]
     while len(msg)>1900: si=msg[:1900].rfind("\n"); chunks.append(msg[:si]); msg=msg[si:]
     chunks.append(msg)
     try:
-        for chunk in chunks:
-            res=requests.post(DISCORD_URL,json={"content":chunk},timeout=10)
-            if res.status_code not in (200,204): print(f"  ⚠️ {res.status_code}")
+        for c in chunks:
+            res=requests.post(DISCORD,json={"content":c},timeout=10)
+            if res.status_code not in (200,204): print(f"  ⚠️ Discord {res.status_code}")
             time.sleep(0.3)
         print(f"  ✅ Discord 전송 완료 ({len(chunks)}개)")
     except Exception as e: print(f"  ❌ Discord 실패: {e}")
 
+# ── 메인 ──────────────────────────────────────────────────────────
 def main():
-    print("╔══════════════════════════════════╗\n║   StockPilot KR  KIS 스크리닝   ║\n╚══════════════════════════════════╝")
-    if not APP_KEY or not APP_SECRET: print("❌ KIS 키 없음"); return
-    date=datetime.now().strftime("%Y%m%d"); print(f"  기준일: {date}")
+    print("╔══════════════════════════════════╗")
+    print("║   StockPilot KR  KIS 스크리닝   ║")
+    print("╚══════════════════════════════════╝")
+    if not APP_KEY or not APP_SECRET:
+        print("❌ KIS_APP_KEY / KIS_APP_SECRET 없음"); return
+
+    date = datetime.now().strftime("%Y%m%d")
+    print(f"  기준일: {date} ({datetime.now().strftime('%H:%M')} KST)")
+
     print("\n[0/4] KIS 토큰 발급 중...")
-    try: token=get_token()
+    try: tok = get_token()
     except Exception as e: print(f"❌ 토큰 실패: {e}"); return
 
-    top30=fetch_top30(token)
+    top30 = fetch_top30(tok)
     if not top30:
-        json.dump({"date":date,"generated_at":datetime.now().isoformat(),"results":[],"recommended":[],"error":"거래대금 없음"},
-                  open("results.json","w",encoding="utf-8"),ensure_ascii=False); return
+        json.dump({"date":date,"generated_at":datetime.now().isoformat(),
+                   "results":[],"recommended":[],"error":"거래대금 없음"},
+                  open("results.json","w",encoding="utf-8"),ensure_ascii=False)
+        return
 
     print(f"\n[2/4] {len(top30)}종목 분석 중...\n")
     results=[]
     for t in top30:
-        tk=t["ticker"]; print(f"  [{t['rank']:2d}] {t['name']:14s} ({tk})",end=" ... ",flush=True)
+        tk=t["ticker"]
+        print(f"  [{t['rank']:2d}] {t['name']:14s} ({tk})",end=" ... ",flush=True)
         try:
-            info=fetch_info(token,tk); fgn=fetch_foreign(token,tk)
-            eps_tr=fetch_eps_trend(token,tk,info.get("eps",0))
-            price=fetch_ch20(token,tk); psr=fetch_psr(token,tk,info.get("close",0))
+            info=fetch_price(tok,tk)
+            fgn=fetch_fgn(tok,tk)
+            eps_tr=fetch_eps_trend(tok,tk,info.get("eps",0))
+            price=fetch_ch20(tok,tk)
+            psr=fetch_psr(tok,tk,info.get("close",0))
             time.sleep(0.2)
+
             data={**t,**info,**fgn,**eps_tr,**price,"psr":psr}
-            filt=judge(data); data.update({"filters":filt,"recommended":filt["recommended"],"pass_count":filt["pass_count"],"total":filt["total"]})
+            f=judge(data)
+            data.update({"filters":f,"recommended":f["recommended"],
+                         "pass_count":f["pass_count"],"total":f["total"]})
             results.append(data)
-            print(f"조건{filt['pass_count']}/{filt['total']}  ROE:{info.get('roe',0):.1f}%  PER:{info.get('per',0):.1f}  PBR:{info.get('pbr',0):.2f}  PSR:{psr:.1f}  EPS:{info.get('eps',0):,.0f}({eps_tr.get('eps_trend','?')})  배당:{info.get('div',0):.1f}%  외국인{'✅' if fgn.get('foreign_ok') else '❌'}{'  ⭐' if filt['recommended'] else ''}")
+            print(
+                f"조건{f['pass_count']}/{f['total']}  "
+                f"ROE:{info.get('roe',0):.1f}%  PER:{info.get('per',0):.1f}  "
+                f"PBR:{info.get('pbr',0):.2f}  PSR:{psr:.1f}  "
+                f"EPS:{info.get('eps',0):,.0f}({eps_tr.get('eps_trend','?')})  "
+                f"배당:{info.get('div',0):.1f}%  "
+                f"외국인{'✅' if fgn.get('foreign_ok') else '❌'}"
+                f"{'  ⭐' if f['recommended'] else ''}"
+            )
         except Exception: print("오류"); traceback.print_exc()
         time.sleep(0.3)
 
-    recommended=[r for r in results if r.get("recommended")]
-    print(f"\n{'─'*70}\n  분석:{len(results)}종목  추천:{len(recommended)}종목")
-    for r in recommended:
-        print(f"  ⭐ {r['name']} ({r['market']}) 조건{r.get('pass_count',0)}/{r.get('total',5)}  ROE {r.get('roe',0):.1f}%  PER {r.get('per',0):.1f}배  PBR {r.get('pbr',0):.2f}  EPS {r.get('eps',0):,.0f}원({r.get('eps_trend','?')})  배당 {r.get('div',0):.1f}%")
+    recs=[r for r in results if r.get("recommended")]
+    print(f"\n{'─'*70}")
+    print(f"  분석:{len(results)}종목  추천:{len(recs)}종목")
+    for r in recs:
+        print(f"  ⭐ {r['name']} ({r['market']}) 조건{r.get('pass_count',0)}/{r.get('total',5)}  "
+              f"ROE {r.get('roe',0):.1f}%  PER {r.get('per',0):.1f}배  "
+              f"EPS {r.get('eps',0):,.0f}원({r.get('eps_trend','?')})  배당 {r.get('div',0):.1f}%")
 
-    json.dump({"date":date,"generated_at":datetime.now().isoformat(),"total":len(results),"results":results,"recommended":recommended},
+    json.dump({"date":date,"generated_at":datetime.now().isoformat(),
+               "total":len(results),"results":results,"recommended":recs},
               open("results.json","w",encoding="utf-8"),ensure_ascii=False,indent=2,default=str)
     print("\n  💾 results.json 저장 완료")
-    send_discord(results,date,recommended)
+    send_discord(results,date,recs)
     print("\n✅ 완료!")
 
 if __name__=="__main__": main()
