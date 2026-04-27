@@ -1,19 +1,15 @@
-# 이 파일 위치: .github/workflows/daily_screener.yml
-# GitHub 저장소에 이 파일이 있으면 자동으로 실행됩니다.
+# .github/workflows/daily_screener.yml
 
 name: 📊 StockPilot 자동 스크리닝
 
 on:
   schedule:
-    # 평일 오전 09:30 KST (= UTC 00:30)
-    - cron: '30 0 * * 1-5'
-    # 평일 오후 15:40 KST (= UTC 06:40) — 장 마감 직후
-    - cron: '40 6 * * 1-5'
+    - cron: '30 0 * * 1-5'   # 평일 오전 09:30 KST
+    - cron: '40 6 * * 1-5'   # 평일 오후 03:40 KST
   workflow_dispatch:
-    # ↑ GitHub Actions 탭에서 "Run workflow" 버튼으로 언제든 수동 실행 가능
 
 permissions:
-  contents: write   # results.json 을 저장소에 커밋하기 위해 필요
+  contents: write
 
 jobs:
   run-screener:
@@ -36,15 +32,15 @@ jobs:
       - name: 🔍 스크리닝 실행
         run: python screener.py
         env:
+          KIS_APP_KEY:     ${{ secrets.KIS_APP_KEY }}
+          KIS_APP_SECRET:  ${{ secrets.KIS_APP_SECRET }}
+          KIS_ACCOUNT:     ${{ secrets.KIS_ACCOUNT }}
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-          KRX_ID: ${{ secrets.KRX_ID }}
-          KRX_PW: ${{ secrets.KRX_PW }}
 
-      - name: 💾 results.json 저장소에 커밋
+      - name: 💾 results.json 커밋
         run: |
           git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config --local user.name  "github-actions[bot]"
           git add results.json
-          # 변경사항이 있을 때만 커밋 (없으면 스킵)
           git diff --staged --quiet || git commit -m "📊 스크리닝 업데이트 $(date +'%Y-%m-%d %H:%M KST' -d '+9 hours')"
           git push
