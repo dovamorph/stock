@@ -14,10 +14,10 @@ body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);co
 .badge{font-size:11px;color:var(--muted);background:#1e3352;padding:3px 9px;border-radius:3px}
 .upd{margin-left:auto;font-size:11px;color:var(--muted)}
 .btn{background:#1a3a6e;color:var(--info);border:none;padding:6px 14px;border-radius:4px;font-size:12px;cursor:pointer;font-family:inherit}
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;padding:14px 20px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;padding:14px 20px}
 .stat{background:var(--surf);border-radius:8px;padding:12px 16px;border:1px solid var(--bdr)}
 .sl{font-size:11px;color:var(--muted);margin-bottom:4px}
-.sv{font-size:22px;font-weight:700;font-family:monospace}
+.sv{font-size:20px;font-weight:700;font-family:monospace}
 .sec{padding:0 20px 14px}
 .sec-ttl{font-size:13px;font-weight:600;color:var(--muted);margin-bottom:10px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
@@ -42,7 +42,8 @@ body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);co
 .twrap{overflow-x:auto;background:var(--surf);border-radius:10px;margin:0 20px 20px}
 table{width:100%;border-collapse:collapse;font-size:12px}
 thead tr{background:var(--card);border-bottom:1px solid var(--bdr)}
-th{padding:9px 8px;text-align:center;color:var(--muted);font-weight:500;white-space:nowrap}
+th{padding:9px 8px;text-align:center;color:var(--muted);font-weight:500;white-space:nowrap;cursor:help;position:relative}
+th[title]:hover{color:var(--text)}
 tbody tr{border-bottom:1px solid var(--bdr);transition:background .1s}
 tbody tr:hover{background:#0f1e32}
 tbody tr.rec{background:#00d97e06}
@@ -50,9 +51,11 @@ td{padding:7px 8px;text-align:center;white-space:nowrap}
 .loading{text-align:center;padding:60px;color:var(--muted)}
 .empty{text-align:center;padding:40px;color:var(--muted)}
 .err{background:#ff456015;border:1px solid #ff456030;color:var(--sell);padding:12px 20px;font-size:12px}
-.footer{text-align:center;padding:16px;font-size:11px;color:var(--muted)}
-.criteria{background:var(--surf);border:1px solid var(--bdr);border-radius:8px;margin:0 20px 14px;padding:12px 16px;font-size:12px;color:var(--muted)}
+.criteria{background:var(--surf);border:1px solid var(--bdr);border-radius:8px;margin:0 20px 14px;padding:12px 16px;font-size:12px;color:var(--muted);line-height:1.8}
 .criteria b{color:var(--text)}
+.footer{text-align:center;padding:16px;font-size:11px;color:var(--muted)}
+/* 툴팁 */
+th[title]{border-bottom:1px dashed var(--muted)}
 </style>
 </head>
 <body>
@@ -67,7 +70,10 @@ td{padding:7px 8px;text-align:center;white-space:nowrap}
 <div class="err" id="err" style="display:none"></div>
 
 <div class="stats" id="stats" style="display:none">
-  <div class="stat"><div class="sl">기준일</div><div class="sv" id="s-date" style="font-size:13px">-</div></div>
+  <div class="stat">
+    <div class="sl">기준일시 (KST)</div>
+    <div class="sv" id="s-date" style="font-size:13px;line-height:1.4">-</div>
+  </div>
   <div class="stat"><div class="sl">분석 종목</div><div class="sv" id="s-tot" style="color:var(--info)">-</div></div>
   <div class="stat"><div class="sl">추천 (A·B)</div><div class="sv" id="s-rec" style="color:var(--buy)">-</div></div>
   <div class="stat"><div class="sl">🟢 A등급</div><div class="sv" id="s-a" style="color:#00d97e">-</div></div>
@@ -75,8 +81,8 @@ td{padding:7px 8px;text-align:center;white-space:nowrap}
 </div>
 
 <div class="criteria" id="criteria" style="display:none">
-  <b>등급 기준</b> (작동 확인된 지표만 적용) &nbsp;|&nbsp;
-  🟢 <b>A</b>: ROE≥15% + PER≤15배 + EPS≥1 + EPS상승 (4개 모두) &nbsp;|&nbsp;
+  <b>등급 기준</b> &nbsp;|&nbsp;
+  🟢 <b>A</b>: ROE≥15% + PER≤15배 + EPS≥1 + EPS상승 (4개 모두 충족) &nbsp;|&nbsp;
   🔵 <b>B</b>: 3개 충족 (추천) &nbsp;|&nbsp;
   🟡 <b>C</b>: 2개 충족 (보류) &nbsp;|&nbsp;
   🔴 <b>D</b>: 1개 이하 (비추천)
@@ -93,12 +99,19 @@ td{padding:7px 8px;text-align:center;white-space:nowrap}
 <div class="twrap" id="twrap" style="display:none">
   <table>
     <thead><tr>
-      <th>#</th><th>종목</th><th>시장</th>
-      <th>거래대금<br>(억)</th><th>거래대금<br>추세</th>
-      <th>20일<br>등락</th>
-      <th>ROE</th><th>PER</th><th>PBR</th>
-      <th>EPS</th><th>EPS추세</th>
-      <th>등급</th><th>추천</th>
+      <th>#</th>
+      <th>종목</th>
+      <th>시장</th>
+      <th title="오늘 하루 거래된 총 금액 (억원 단위). 높을수록 시장의 관심이 큰 종목">거래대금(억) ℹ</th>
+      <th title="최근 5일 거래대금이 30일 평균 대비 얼마나 증가했는지. 양수(+)면 거래 활발, 음수(-)면 거래 감소">거래대금추세 ℹ</th>
+      <th title="최근 20거래일(약 1개월) 동안의 주가 등락률. 🔥 표시는 20% 이상 급등">20일등락 ℹ</th>
+      <th title="자기자본이익률 (Return On Equity) — 기업이 자본을 활용해 얼마나 이익을 냈는지. ✅ 기준: 15% 이상">ROE ℹ</th>
+      <th title="주가수익비율 (Price Earnings Ratio) — 주가가 순이익의 몇 배인지. 낮을수록 저평가. ✅ 기준: 15배 이하 (흑자 기업)">PER ℹ</th>
+      <th title="주가순자산비율 (Price Book-value Ratio) — 주가가 순자산의 몇 배인지. 1.0 미만이면 자산 대비 저평가. 참고 기준: 1.5배 이하">PBR ℹ</th>
+      <th title="주당순이익 (Earnings Per Share) — 주식 1주당 벌어들인 순이익. ✅ 기준: 1원 이상이며 매년 꾸준히 상승하는 기업 선호">EPS ℹ</th>
+      <th title="EPS 성장 추세 — 최근 3년 연간 EPS가 꾸준히 증가 중인지 여부. 📈 상승 / ➡️ 유지 / 📉 부진">EPS추세 ℹ</th>
+      <th title="종합 등급 — 4개 핵심 조건(ROE/PER/EPS/EPS추세) 충족 개수로 산출. A: 4개 / B: 3개 / C: 2개 / D: 1개 이하">등급 ℹ</th>
+      <th title="추천 여부 — A·B등급(조건 3개 이상 충족) 종목에 ★ 표시">추천 ℹ</th>
     </tr></thead>
     <tbody id="tbody"></tbody>
   </table>
@@ -187,19 +200,19 @@ async function load(){
     if(!res.ok)throw new Error("HTTP "+res.status);
     const d=await res.json();
     if(d.error){document.getElementById("err").textContent="⚠️ "+d.error;document.getElementById("err").style.display="block";}
+
+    // 기준일 + 시간 표시
     if(d.generated_at){
       const dt=new Date(d.generated_at);
-      document.getElementById("upd").textContent="마지막 업데이트: "+dt.toLocaleString("ko-KR");
+      // KST = UTC+9
+      const kst=new Date(dt.getTime()+9*60*60*1000);
+      const ymd=`${kst.getUTCFullYear()}.${String(kst.getUTCMonth()+1).padStart(2,"0")}.${String(kst.getUTCDate()).padStart(2,"0")}`;
+      const hm=`${String(kst.getUTCHours()).padStart(2,"0")}:${String(kst.getUTCMinutes()).padStart(2,"0")}`;
+      document.getElementById("s-date").textContent=`${ymd}\n${hm} KST`;
+      document.getElementById("upd").textContent=`마지막 업데이트: ${ymd} ${hm} KST`;
     }
+
     const results=d.results||[]; const rec=d.recommended||[];
-    if(d.generated_at){
-  const dt=new Date(d.generated_at);
-  const dateStr=`${d.date.slice(0,4)}.${d.date.slice(4,6)}.${d.date.slice(6)}`;
-  const timeStr=dt.toLocaleTimeString("ko-KR",{hour:"2-digit",minute:"2-digit"});
-  document.getElementById("s-date").textContent=`${dateStr} ${timeStr}`;
-}else if(d.date){
-  document.getElementById("s-date").textContent=`${d.date.slice(0,4)}.${d.date.slice(4,6)}.${d.date.slice(6)}`;
-}
     document.getElementById("s-tot").textContent=results.length;
     document.getElementById("s-rec").textContent=rec.length;
     document.getElementById("s-a").textContent=results.filter(r=>r.grade==="A").length;
