@@ -1,17 +1,11 @@
 """
 StockPilot KR — KIS OpenAPI 스크리닝
-작동 확인된 지표만 사용:
-  거래대금 / ROE / PER / PBR / EPS / EPS추세 / 20일등락
-제거된 지표:
-  외국인순매수(API불안정) / 배당(0만나옴) / PSR(계산오류)
-추천 등급:
-  A: ROE≥15% + PER≤15배 + EPS≥1 + EPS상승 (전부충족)
-  B: 위 중 3개 충족
-  C: 위 중 2개 충족
-  D: 1개 이하
+지표: 거래대금 / ROE / PER / PBR / EPS / EPS추세 / 배당 / 20일등락
+등급: A(4/4) B(3/4) C(2/4) D(1이하)
 """
 import os, json, time, traceback
 from datetime import datetime, timedelta
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 try:
     import requests, pandas as pd
@@ -24,7 +18,7 @@ APP_SECRET = os.environ.get("KIS_APP_SECRET","")
 DISCORD    = os.environ.get("DISCORD_WEBHOOK","")
 BASE       = "https://openapi.koreainvestment.com:9443"
 TOP_N      = 30
-CAND_N     = 300
+CAND_N     = 300  # 시총 상위 300개에서 거래대금 계산
 
 ETF_KW = ["ETF","ETN","KODEX","TIGER","KBSTAR","ARIRANG","HANARO","SOL","ACE",
           "RISE","레버리지","인버스","선물","PLUS","TIMEFOLIO"]
@@ -85,9 +79,10 @@ def load_candidates():
     print(f"  → {len(result)}개 후보 확정")
     return result
 
-# ── 2단계: KIS 현재가 (거래대금 + PER/PBR/EPS/ROE) ──────────────
+# ── 2단계: KIS 현재가 (거래대금 + PER/PBR/EPS/ROE/배당) ──────────
 def fetch_price_info(tok, ticker):
-    r={"per":0.,"pbr":0.,"eps":0.,"bps":0.,"roe":0.,"close":0.,"acml_tr_pbmn":0.,"tvol_today":0}
+    r={"per":0.,"pbr":0.,"eps":0.,"bps":0.,"roe":0.,"div":0.,
+       "close":0.,"acml_tr_pbmn":0.,"tvol_today":0}
     try:
         res=requests.get(f"{BASE}/uapi/domestic-stock/v1/quotations/inquire-price",
             headers=H(tok,"FHKST01010100"),timeout=10,
@@ -100,16 +95,16 @@ def fetch_price_info(tok, ticker):
         r["pbr"]  = sf(o.get("pbr"))
         r["eps"]  = sf(o.get("eps"))
         r["bps"]  = sf(o.get("bps"))
+        r["div"]  = sf(o.get("d_rate"))   # 배당수익률
         if r["bps"]>0: r["roe"]=round(r["eps"]/r["bps"]*100,1)
     except Exception as e: print(f"    현재가오류({ticker}):{e}")
     return r
 
-# ── 3단계: 거래대금 상위 30 선정 ────────────────────────────────
+# ── 3단계: 거래대금 상위 30 선정 (병렬 조회) ─────────────────────
 def select_top30(tok, candidates):
-    from concurrent.futures import ThreadPoolExecutor, as_completed
     print(f"\n[2/3] {len(candidates)}종목 거래대금 동시 조회 중...")
     enriched=[]
-    lock=__import__("threading").Lock()
+    done_count=[0]
 
     def query(c):
         try:
@@ -120,13 +115,13 @@ def select_top30(tok, candidates):
 
     with ThreadPoolExecutor(max_workers=10) as ex:
         futures={ex.submit(query,c):c for c in candidates}
-        done=0
         for f in as_completed(futures):
             enriched.append(f.result())
-            done+=1
-            if done%30==0: print(f"  {done}/{len(candidates)} 완료...")
+            done_count[0]+=1
+            if done_count[0]%30==0:
+                print(f"  {done_count[0]}/{len(candidates)} 완료...")
 
-    print(f"  {len(enriched)}/{len(candidates)} 완료...")
+    print(f"  {len(enriched)}/{len(candidates)} 완료")
 
     df=(pd.DataFrame(enriched)
         .sort_values("acml_tr_pbmn",ascending=False)
@@ -145,6 +140,7 @@ def select_top30(tok, candidates):
             "eps":    row.get("eps",0.),
             "bps":    row.get("bps",0.),
             "roe":    row.get("roe",0.),
+            "div":    row.get("div",0.),
             "close":  row.get("close",0.),
         })
     print(f"\n  거래대금 상위 {len(result)}종목:")
@@ -195,35 +191,24 @@ def fetch_ch20(tok, ticker):
 
 # ── 추천 등급 판단 ─────────────────────────────────────────────────
 def judge(d):
-    roe = d.get("roe",0) or 0
-    per = d.get("per",0) or 0
-    eps = d.get("eps",0) or 0
-    eps_trend = d.get("eps_trend","")
+    roe=d.get("roe",0) or 0
+    per=d.get("per",0) or 0
+    eps=d.get("eps",0) or 0
+    eps_trend=d.get("eps_trend","")
 
-    # 핵심 4개 조건
-    c1 = roe >= 15                    # ROE 15% 이상
-    c2 = 0 < per <= 15               # PER 15배 이하 (흑자)
-    c3 = eps >= 1                    # EPS 1원 이상
-    c4 = eps_trend == "상승"          # EPS 상승추세
+    c1 = roe >= 15           # ROE 15% 이상
+    c2 = 0 < per <= 15       # PER 15배 이하 (흑자)
+    c3 = eps >= 1            # EPS 1원 이상
+    c4 = eps_trend == "상승"  # EPS 상승추세
 
-    score = sum([c1, c2, c3, c4])
+    score=sum([c1,c2,c3,c4])
+    if score==4:   grade="A"
+    elif score==3: grade="B"
+    elif score==2: grade="C"
+    else:          grade="D"
 
-    if score == 4:   grade = "A"   # 전부 충족 → 강력 추천
-    elif score == 3: grade = "B"   # 3개 충족 → 추천
-    elif score == 2: grade = "C"   # 2개 충족 → 보류
-    else:            grade = "D"   # 1개 이하 → 비추천
-
-    recommended = score >= 3  # B등급 이상 추천
-
-    return {
-        "roe_ok":  c1,
-        "per_ok":  c2,
-        "eps_ok":  c3,
-        "eps_up":  c4,
-        "score":   score,
-        "grade":   grade,
-        "recommended": recommended,
-    }
+    return {"roe_ok":c1,"per_ok":c2,"eps_ok":c3,"eps_up":c4,
+            "score":score,"grade":grade,"recommended":score>=3}
 
 # ── Discord ───────────────────────────────────────────────────────
 def send_discord(results, date, recs):
@@ -231,24 +216,24 @@ def send_discord(results, date, recs):
     dt=f"{date[:4]}.{date[4:6]}.{date[6:]}"
     ei={"상승":"📈","유지":"➡️","부진":"📉","데이터없음":"❓"}
     ge={"A":"🟢","B":"🔵","C":"🟡","D":"🔴"}
-
     display=recs[:5] if recs else sorted(results,key=lambda x:x.get("score",0),reverse=True)[:5]
-
     lines=[
         f"📊 **StockPilot KR — {dt}** (KIS 실시간)",
         f"거래대금 상위{TOP_N} | ROE≥15% · PER≤15배 · EPS≥1 · EPS상승",
-        f"✅ 추천(A·B등급): **{len(recs)}종목**","",
+        f"✅ 추천(A·B): **{len(recs)}종목**","",
         "⭐ **추천 종목**" if recs else "📊 **상위 종목** (추천 기준 미달)","─"*30,
     ]
     for r in display:
         f=r.get("filters",{}); g=r.get("grade","D"); sc=r.get("score",0)
         star="⭐ " if r.get("recommended") else ""
         eps_t=r.get("eps_trend","데이터없음"); eps_g=r.get("eps_growth",0)
+        div=r.get("div",0)
+        div_str=f"  💰배당 {div:.1f}%" if div>=3 else (f"  배당 {div:.1f}%" if div>0 else "")
         lines.append(f"{ge.get(g,'⚪')} {star}**{r['name']}** ({r['market']}) — {g}등급 ({sc}/4 충족)")
         lines.append(
             f"  ROE {r.get('roe',0):.1f}%{'✅' if f.get('roe_ok') else '❌'}"
             f"  PER {r.get('per',0):.1f}배{'✅' if f.get('per_ok') else '❌'}"
-            f"  PBR {r.get('pbr',0):.2f}")
+            f"  PBR {r.get('pbr',0):.2f}{div_str}")
         lines.append(
             f"  {ei.get(eps_t,'❓')} EPS {r.get('eps',0):,.0f}원"
             f"{f'({eps_g:+.1f}%)' if eps_g else ''} ({eps_t}){'✅' if f.get('eps_ok') and f.get('eps_up') else '❌'}")
@@ -257,7 +242,6 @@ def send_discord(results, date, recs):
             f"  거래대금 {r.get('tvol',0):,}억")
         lines.append("")
     lines.append("⚠️ 투자 손실 책임은 본인에게 있습니다.")
-
     msg="\n".join(lines)
     chunks=[]
     while len(msg)>1900: si=msg[:1900].rfind("\n"); chunks.append(msg[:si]); msg=msg[si:]
@@ -294,6 +278,7 @@ def main():
 
     print(f"\n[3/3] {len(top30)}종목 상세 분석 중...\n")
     results=[]
+    ge_map={"A":"🟢","B":"🔵","C":"🟡","D":"🔴"}
     for t in top30:
         tk=t["ticker"]
         print(f"  [{t['rank']:2d}] {t['name']:14s} ({tk})",end=" ... ",flush=True)
@@ -301,35 +286,31 @@ def main():
             eps_tr=fetch_eps_trend(tok,tk,t.get("eps",0))
             price=fetch_ch20(tok,tk)
             time.sleep(0.2)
-
             data={**t,**eps_tr,**price}
             f=judge(data)
-            data.update({
-                "filters":     f,
-                "grade":       f["grade"],
-                "score":       f["score"],
-                "recommended": f["recommended"],
-            })
+            data.update({"filters":f,"grade":f["grade"],"score":f["score"],"recommended":f["recommended"]})
             results.append(data)
-            ge={"A":"🟢","B":"🔵","C":"🟡","D":"🔴"}
+            div=t.get("div",0)
+            div_str=f"  💰배당{div:.1f}%" if div>=3 else (f"  배당{div:.1f}%" if div>0 else "")
             print(
-                f"{ge.get(f['grade'],'⚪')}{f['grade']}등급({f['score']}/4)  "
+                f"{ge_map.get(f['grade'],'⚪')}{f['grade']}등급({f['score']}/4)  "
                 f"ROE:{t.get('roe',0):.1f}%{'✅' if f['roe_ok'] else '❌'}  "
                 f"PER:{t.get('per',0):.1f}{'✅' if f['per_ok'] else '❌'}  "
-                f"EPS:{t.get('eps',0):,.0f}({eps_tr.get('eps_trend','?')}){'✅' if f['eps_ok'] and f['eps_up'] else '❌'}  "
-                f"20일:{price.get('ch20',0):+.1f}%"
+                f"EPS:{t.get('eps',0):,.0f}({eps_tr.get('eps_trend','?')}){'✅' if f['eps_ok'] and f['eps_up'] else '❌'}"
+                f"{div_str}  20일:{price.get('ch20',0):+.1f}%"
                 f"{'  ⭐추천' if f['recommended'] else ''}"
             )
         except Exception: print("오류"); traceback.print_exc()
         time.sleep(0.3)
 
     recs=[r for r in results if r.get("recommended")]
-    print(f"\n{'─'*70}")
-    print(f"  분석:{len(results)}종목  추천(A·B):{len(recs)}종목")
+    print(f"\n{'─'*70}\n  분석:{len(results)}종목  추천(A·B):{len(recs)}종목")
     for r in recs:
-        print(f"  {'🟢' if r['grade']=='A' else '🔵'}{r['grade']}등급 {r['name']} ({r['market']})"
+        div=r.get("div",0)
+        print(f"  {ge_map.get(r['grade'],'⚪')}{r['grade']}등급 {r['name']} ({r['market']})"
               f"  ROE {r.get('roe',0):.1f}%  PER {r.get('per',0):.1f}배"
-              f"  EPS {r.get('eps',0):,.0f}원({r.get('eps_trend','?')})")
+              f"  EPS {r.get('eps',0):,.0f}원({r.get('eps_trend','?')})"
+              f"{f'  💰배당{div:.1f}%' if div>=3 else ''}")
 
     json.dump({"date":date,"generated_at":datetime.now().isoformat(),
                "total":len(results),"results":results,"recommended":recs},
