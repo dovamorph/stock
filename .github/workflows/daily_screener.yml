@@ -4,7 +4,7 @@ name: 📊 StockPilot 자동 스크리닝
 
 on:
   schedule:
-    - cron: '0,30 0-7 * * 1-5'   # 평일 09:00~16:30 KST, 30분마다
+    - cron: '0,30 0-10 * * 1-5'   # 평일 09:00~16:30 KST, 30분마다
   workflow_dispatch:
 
 permissions:
