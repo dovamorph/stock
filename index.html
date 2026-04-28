@@ -67,7 +67,7 @@ td{padding:7px 8px;text-align:center;white-space:nowrap}
 <div class="err" id="err" style="display:none"></div>
 
 <div class="stats" id="stats" style="display:none">
-  <div class="stat"><div class="sl">기준일</div><div class="sv" id="s-date" style="font-size:15px">-</div></div>
+  <div class="stat"><div class="sl">기준일</div><div class="sv" id="s-date" style="font-size:13px">-</div></div>
   <div class="stat"><div class="sl">분석 종목</div><div class="sv" id="s-tot" style="color:var(--info)">-</div></div>
   <div class="stat"><div class="sl">추천 (A·B)</div><div class="sv" id="s-rec" style="color:var(--buy)">-</div></div>
   <div class="stat"><div class="sl">🟢 A등급</div><div class="sv" id="s-a" style="color:#00d97e">-</div></div>
@@ -192,7 +192,14 @@ async function load(){
       document.getElementById("upd").textContent="마지막 업데이트: "+dt.toLocaleString("ko-KR");
     }
     const results=d.results||[]; const rec=d.recommended||[];
-    document.getElementById("s-date").textContent=d.date?`${d.date.slice(0,4)}.${d.date.slice(4,6)}.${d.date.slice(6)}`:"-";
+    if(d.generated_at){
+  const dt=new Date(d.generated_at);
+  const dateStr=`${d.date.slice(0,4)}.${d.date.slice(4,6)}.${d.date.slice(6)}`;
+  const timeStr=dt.toLocaleTimeString("ko-KR",{hour:"2-digit",minute:"2-digit"});
+  document.getElementById("s-date").textContent=`${dateStr} ${timeStr}`;
+}else if(d.date){
+  document.getElementById("s-date").textContent=`${d.date.slice(0,4)}.${d.date.slice(4,6)}.${d.date.slice(6)}`;
+}
     document.getElementById("s-tot").textContent=results.length;
     document.getElementById("s-rec").textContent=rec.length;
     document.getElementById("s-a").textContent=results.filter(r=>r.grade==="A").length;
