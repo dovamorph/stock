@@ -18,7 +18,7 @@ APP_SECRET = os.environ.get("KIS_APP_SECRET","")
 DISCORD    = os.environ.get("DISCORD_WEBHOOK","")
 BASE       = "https://openapi.koreainvestment.com:9443"
 TOP_N      = 30
-CAND_N     = 300  # 시총 상위 300개에서 거래대금 계산
+CAND_N     = 300
 
 ETF_KW = ["ETF","ETN","KODEX","TIGER","KBSTAR","ARIRANG","HANARO","SOL","ACE",
           "RISE","레버리지","인버스","선물","PLUS","TIMEFOLIO"]
@@ -80,7 +80,7 @@ def load_candidates():
     return result
 
 # ── 2단계: KIS 현재가 (거래대금 + PER/PBR/EPS/ROE/배당) ──────────
-def fetch_price_info(tok, ticker):
+def fetch_price_info(tok, ticker, debug=False):
     r={"per":0.,"pbr":0.,"eps":0.,"bps":0.,"roe":0.,"div":0.,
        "close":0.,"acml_tr_pbmn":0.,"tvol_today":0}
     try:
@@ -88,6 +88,12 @@ def fetch_price_info(tok, ticker):
             headers=H(tok,"FHKST01010100"),timeout=10,
             params={"fid_cond_mrkt_div_code":"J","fid_input_iscd":ticker})
         o=res.json().get("output",{})
+
+        if debug:
+            # 배당 관련 필드 전체 출력 (첫 번째 종목만)
+            div_keys=[k for k in o.keys() if any(x in k.lower() for x in ["div","dvd","rat","d_r"])]
+            print(f"\n  [DEBUG 배당 관련 필드] {ticker}: {[(k,o[k]) for k in div_keys]}")
+
         r["close"]        = sf(o.get("stck_prpr"))
         r["acml_tr_pbmn"] = sf(o.get("acml_tr_pbmn",0))
         r["tvol_today"]   = int(r["acml_tr_pbmn"])//100000000
@@ -95,7 +101,16 @@ def fetch_price_info(tok, ticker):
         r["pbr"]  = sf(o.get("pbr"))
         r["eps"]  = sf(o.get("eps"))
         r["bps"]  = sf(o.get("bps"))
-        r["div"]  = sf(o.get("d_rate"))   # 배당수익률
+
+        # 배당수익률 — 가능한 필드명 모두 시도
+        div_val = 0.0
+        for field in ["d_rate", "dvdy_rate", "dvd_yield", "stck_dvdy_rate", "div_rate"]:
+            v = sf(o.get(field, 0))
+            if v > 0:
+                div_val = v
+                break
+        r["div"] = div_val
+
         if r["bps"]>0: r["roe"]=round(r["eps"]/r["bps"]*100,1)
     except Exception as e: print(f"    현재가오류({ticker}):{e}")
     return r
@@ -105,10 +120,13 @@ def select_top30(tok, candidates):
     print(f"\n[2/3] {len(candidates)}종목 거래대금 동시 조회 중...")
     enriched=[]
     done_count=[0]
+    first_done=[False]
 
     def query(c):
+        debug = not first_done[0]  # 첫 종목만 디버그
         try:
-            info=fetch_price_info(tok,c["ticker"])
+            info=fetch_price_info(tok,c["ticker"],debug=debug)
+            if debug: first_done[0]=True
             return {**c,**info}
         except:
             return {**c,"tvol_today":0,"acml_tr_pbmn":0}
@@ -144,7 +162,7 @@ def select_top30(tok, candidates):
             "close":  row.get("close",0.),
         })
     print(f"\n  거래대금 상위 {len(result)}종목:")
-    for r in result[:5]: print(f"    {r['rank']:2d}. {r['name']} ({r['market']}) — {r['tvol']:,}억")
+    for r in result[:5]: print(f"    {r['rank']:2d}. {r['name']} ({r['market']}) — {r['tvol']:,}억  배당:{r['div']:.2f}%")
     return result
 
 # ── 4단계: EPS 추세 ───────────────────────────────────────────────
@@ -195,18 +213,12 @@ def judge(d):
     per=d.get("per",0) or 0
     eps=d.get("eps",0) or 0
     eps_trend=d.get("eps_trend","")
-
-    c1 = roe >= 15           # ROE 15% 이상
-    c2 = 0 < per <= 15       # PER 15배 이하 (흑자)
-    c3 = eps >= 1            # EPS 1원 이상
-    c4 = eps_trend == "상승"  # EPS 상승추세
-
+    c1=roe>=15; c2=0<per<=15; c3=eps>=1; c4=eps_trend=="상승"
     score=sum([c1,c2,c3,c4])
-    if score==4:   grade="A"
+    if score==4: grade="A"
     elif score==3: grade="B"
     elif score==2: grade="C"
-    else:          grade="D"
-
+    else: grade="D"
     return {"roe_ok":c1,"per_ok":c2,"eps_ok":c3,"eps_up":c4,
             "score":score,"grade":grade,"recommended":score>=3}
 
@@ -228,7 +240,7 @@ def send_discord(results, date, recs):
         star="⭐ " if r.get("recommended") else ""
         eps_t=r.get("eps_trend","데이터없음"); eps_g=r.get("eps_growth",0)
         div=r.get("div",0)
-        div_str=f"  💰배당 {div:.1f}%" if div>=3 else (f"  배당 {div:.1f}%" if div>0 else "")
+        div_str=f"  💰배당 {div:.1f}%" if div>0 else ""
         lines.append(f"{ge.get(g,'⚪')} {star}**{r['name']}** ({r['market']}) — {g}등급 ({sc}/4 충족)")
         lines.append(
             f"  ROE {r.get('roe',0):.1f}%{'✅' if f.get('roe_ok') else '❌'}"
@@ -291,7 +303,7 @@ def main():
             data.update({"filters":f,"grade":f["grade"],"score":f["score"],"recommended":f["recommended"]})
             results.append(data)
             div=t.get("div",0)
-            div_str=f"  💰배당{div:.1f}%" if div>=3 else (f"  배당{div:.1f}%" if div>0 else "")
+            div_str=f"  💰배당{div:.1f}%" if div>0 else "  배당없음"
             print(
                 f"{ge_map.get(f['grade'],'⚪')}{f['grade']}등급({f['score']}/4)  "
                 f"ROE:{t.get('roe',0):.1f}%{'✅' if f['roe_ok'] else '❌'}  "
@@ -310,7 +322,7 @@ def main():
         print(f"  {ge_map.get(r['grade'],'⚪')}{r['grade']}등급 {r['name']} ({r['market']})"
               f"  ROE {r.get('roe',0):.1f}%  PER {r.get('per',0):.1f}배"
               f"  EPS {r.get('eps',0):,.0f}원({r.get('eps_trend','?')})"
-              f"{f'  💰배당{div:.1f}%' if div>=3 else ''}")
+              f"{f'  💰배당{div:.1f}%' if div>0 else ''}")
 
     json.dump({"date":date,"generated_at":datetime.now().isoformat(),
                "total":len(results),"results":results,"recommended":recs},
