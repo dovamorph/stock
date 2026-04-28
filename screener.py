@@ -106,15 +106,27 @@ def fetch_price_info(tok, ticker):
 
 # ── 3단계: 거래대금 상위 30 선정 ────────────────────────────────
 def select_top30(tok, candidates):
-    print(f"\n[2/3] {len(candidates)}종목 거래대금 조회 중...")
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    print(f"\n[2/3] {len(candidates)}종목 거래대금 동시 조회 중...")
     enriched=[]
-    for i,c in enumerate(candidates):
+    lock=__import__("threading").Lock()
+
+    def query(c):
         try:
             info=fetch_price_info(tok,c["ticker"])
-            enriched.append({**c,**info})
-        except: enriched.append({**c,"tvol_today":0,"acml_tr_pbmn":0})
-        if (i+1)%10==0: print(f"  {i+1}/{len(candidates)} 완료...")
-        time.sleep(0.05)
+            return {**c,**info}
+        except:
+            return {**c,"tvol_today":0,"acml_tr_pbmn":0}
+
+    with ThreadPoolExecutor(max_workers=10) as ex:
+        futures={ex.submit(query,c):c for c in candidates}
+        done=0
+        for f in as_completed(futures):
+            enriched.append(f.result())
+            done+=1
+            if done%30==0: print(f"  {done}/{len(candidates)} 완료...")
+
+    print(f"  {len(enriched)}/{len(candidates)} 완료...")
 
     df=(pd.DataFrame(enriched)
         .sort_values("acml_tr_pbmn",ascending=False)
