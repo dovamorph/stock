@@ -150,22 +150,15 @@ def fetch_eps_and_div(tok, ticker, cur_eps):
             else: r["eps_trend"]="부진"
         else: r["eps_trend"]="유지" if cur_eps>=1 else "부진"
 
-        # 배당수익률 — financial-ratio 응답의 여러 필드 시도
+      # 배당수익률 — financial-ratio 응답의 배당 관련 필드만 시도
         if items:
             latest = items[0]
-            # 가능한 배당 필드명 모두 시도
-            for field in ["dvdy_rate","dvd_yield","d_rate","dvd_rate","sps","div_rate","dvdy"]:
+            # 배당 관련 필드명만 (sps 같은 매출 필드 제외)
+            for field in ["dvdy_rate","dvd_yield","dvd_rate","div_rate","dvdy","d_rate"]:
                 v=sf(latest.get(field,0))
-                if v>0:
+                if 0.05 < v <= 15.0:  # 배당수익률 정상 범위 (0.05%~15%)
                     r["div"]=v
                     break
-            # 0이면 전체 필드 중 0.x ~ 15.0 사이 값 찾기 (배당수익률 범위)
-            if r["div"]==0:
-                for k,v in latest.items():
-                    fv=sf(v)
-                    if 0<fv<=15 and k not in ["eps","bps","per","pbr","roe","roa"]:
-                        # 배당수익률 후보 출력 (디버그)
-                        print(f"    [배당후보] {ticker} {k}={fv}")
 
     except Exception as e:
         r["eps_trend"]="유지" if cur_eps>=1 else "부진"
