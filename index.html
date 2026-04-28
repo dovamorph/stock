@@ -189,7 +189,7 @@ function card(r){
   if(f.eps_ok&&f.eps_up) tags.push({l:"EPS 📈 상승",c:"tg"});
   else if(f.eps_ok) tags.push({l:"EPS ➡️ 유지",c:"ty"});
   else tags.push({l:"EPS ❌",c:"tr"});
-  if(div>=3) tags.push({l:"💰 배당 "+fn(div)+"%",c:"tb"});
+  if(div>0) tags.push({l:"💰 배당 "+fn(div)+"%",c:"tb"});
   if((+r.ch20||0)>=20) tags.push({l:"🔥 20일 "+fp(r.ch20),c:"ty"});
   return`<div class="rcard" onclick="scrollTo('${r.ticker}')">
     <div class="rh">
@@ -228,7 +228,7 @@ function row(r){
     <td style="color:${(+r.pbr||0)>0&&(+r.pbr||0)<=1.5?"var(--buy)":"var(--text)"}">${(+r.pbr||0)>0?fn(r.pbr,2):"–"}</td>
     <td style="font-family:monospace;font-size:11px">${(+r.eps||0)!=0?fk(Math.round(+r.eps))+"원":"–"}</td>
     <td style="color:${epsColor}">${epsIcon[epsTrend]||"❓"} ${epsTrend}</td>
-    <td style="color:${cDIV(div)};font-weight:${div>=3?700:400}">${div>0?(fn(div)+"%"+(div>=3?" 💰":"")):"–"}</td>
+    <td style="color:${div>0?"var(--buy)":"var(--muted)"}">${div>0?(fn(div)+"% 💰"):"–"}</td>
     <td><span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:5px;font-weight:700;font-size:13px;background:${col}20;border:1.5px solid ${col};color:${col}">${g}</span></td>
     <td>${r.recommended?'<span style="color:var(--buy);font-size:15px">★</span>':'<span style="color:var(--muted)">–</span>'}</td>
   </tr>`;
