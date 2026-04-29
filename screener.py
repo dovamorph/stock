@@ -457,8 +457,8 @@ def main():
     date=datetime.now().strftime("%Y%m%d")
     print(f"  기준일: {date} ({datetime.now().strftime('%H:%M')} KST)")
     print(f"  등급: ROE≥15%(A) PER≤15배(A) EPS≥1(A) EPS상승(A) → 3개이상=추천")
-  print(f"  단타: 거래대금추세≥10% + 5일 3~20% + 20일 10~40% + C등급이상")
-  print(f"  장투: ROE≥15% + EPS상승 + (PBR≤2.0 or 배당주) [PER무관]")
+    print(f"  단타: 거래대금추세≥10% + 5일 3~20% + 20일 10~40% + C등급이상")
+    print(f"  장투: ROE≥15% + EPS상승 + (PBR≤2.0 or 배당주) [PER무관]")
 
     print("\n[0] KIS 토큰 발급 중...")
     try: tok=get_token()
