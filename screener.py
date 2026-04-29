@@ -192,18 +192,22 @@ def get_trade_label(d: dict) -> dict:
     # 실제 5일 등락은 fetch_ch20에서 추가해야 하므로 ch5 사용
     ch5 = d.get("ch5", ch20 / 4)  # ch5 없으면 20일의 1/4로 근사
 
-    # ── 단타 조건 ──
-    cond_vol    = vol_trend >= 20            # 거래대금 추세 급증
-    cond_ch5    = 3 <= ch5 <= 15            # 5일 3~15% (추세 형성 중)
-    cond_ch20   = ch20 < 30                 # 20일 30% 미만 (과열 아님)
-    is_danta    = cond_vol and cond_ch5 and cond_ch20
+    # ── 단타 조건 (1~7일) ──
+    # 거래대금 추세 10% 이상 + 5일 상승 3~20% + 20일 10~40% (추세 형성 중) + C등급 이상
+    score = d.get("score", 0) or 0
+    cond_vol    = vol_trend >= 10            # 거래 증가 (완화)
+    cond_ch5    = 3 <= ch5 <= 20            # 5일 3~20% 상승 중
+    cond_ch20   = 10 <= ch20 <= 40          # 20일 10~40% (추세는 있으나 과열 아님)
+    cond_grade  = score >= 2                # C등급 이상 (D등급 제외)
+    is_danta    = cond_vol and cond_ch5 and cond_ch20 and cond_grade
 
-    # ── 장투 조건 ──
+    # ── 장투 조건 (1년+) ──
+    # ROE ≥ 15% + EPS 상승 + EPS ≥ 1 + (PBR ≤ 2.0 or 배당주)
+    # PER 조건 제거 — 성장주는 PER 높아도 장투 가능
     cond_roe    = roe >= 15
-    cond_eps    = eps_trend == "상승"
-    cond_per    = 0 < per <= 25
+    cond_eps    = eps_trend == "상승" and eps >= 1
     cond_value  = (0 < pbr <= 2.0) or is_div  # 가치주 OR 배당주
-    is_jangtu   = cond_roe and cond_eps and cond_per and cond_value
+    is_jangtu   = cond_roe and cond_eps and cond_value
 
     if is_danta and is_jangtu:
         label = "⚡💎"
@@ -453,8 +457,8 @@ def main():
     date=datetime.now().strftime("%Y%m%d")
     print(f"  기준일: {date} ({datetime.now().strftime('%H:%M')} KST)")
     print(f"  등급: ROE≥15%(A) PER≤15배(A) EPS≥1(A) EPS상승(A) → 3개이상=추천")
-    print(f"  단타: 거래대금추세≥20% + 5일등락 3~15% + 20일<30%")
-    print(f"  장투: ROE≥15% + EPS상승 + PER≤25배 + (PBR≤2.0 or 배당주)")
+  print(f"  단타: 거래대금추세≥10% + 5일 3~20% + 20일 10~40% + C등급이상")
+  print(f"  장투: ROE≥15% + EPS상승 + (PBR≤2.0 or 배당주) [PER무관]")
 
     print("\n[0] KIS 토큰 발급 중...")
     try: tok=get_token()
