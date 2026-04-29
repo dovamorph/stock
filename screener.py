@@ -192,16 +192,18 @@ def get_trade_label(d: dict) -> dict:
     score     = d.get("score", 0) or 0
 
     # ── 단타 조건 ──
+    # 현재 불장(20일 상승 폭 큼)을 감안해 20일 기준 30%로 완화
     cond_ch5   = 5 <= ch5 <= 20       # 5일 5~20% (추세 형성 중, 과열 전)
-    cond_vol   = vol_trend >= 30      # 거래 급증 30% 이상 (엄격)
-    cond_ch20  = ch20 < 25            # 20일 25% 미만 (과열 아님)
+    cond_vol   = vol_trend >= 20      # 거래 급증 20% 이상
+    cond_ch20  = ch20 < 50            # 20일 50% 미만 (현 강세장 기준 과열선)
     cond_grade = score >= 3           # B등급 이상 (D/C 제외)
     is_danta   = cond_ch5 and cond_vol and cond_ch20 and cond_grade
 
     # ── 장투 조건 ──
+    # 현재 한국 시장 PER 수준 감안해 25배로 완화, 나머지는 엄격 유지
     cond_roe   = roe >= 15                          # ROE 15% 이상
     cond_eps   = eps_trend == "상승" and eps >= 1   # EPS 상승 + 흑자
-    cond_per   = 0 < per <= 20                      # PER 20배 이하 (엄격)
+    cond_per   = 0 < per <= 25                      # PER 25배 이하
     cond_value = (0 < pbr <= 1.5) or is_div         # PBR 1.5 이하 or 배당주
     is_jangtu  = cond_roe and cond_eps and cond_per and cond_value
 
@@ -453,8 +455,8 @@ def main():
     date=datetime.now().strftime("%Y%m%d")
     print(f"  기준일: {date} ({datetime.now().strftime('%H:%M')} KST)")
     print(f"  등급: ROE≥15%(A) PER≤15배(A) EPS≥1(A) EPS상승(A) → 3개이상=추천")
-    print(f"  단타: 거래대금추세≥30% + 5일 5~20% + 20일<25% + B등급이상")
-    print(f"  장투: ROE≥15% + EPS상승 + PER≤20배 + (PBR≤1.5 or 배당주)")
+    print(f"  단타: 거래대금추세≥20% + 5일 5~20% + 20일<30% + B등급이상")
+    print(f"  장투: ROE≥15% + EPS상승 + PER≤25배 + (PBR≤1.5 or 배당주)")
 
     print("\n[0] KIS 토큰 발급 중...")
     try: tok=get_token()
