@@ -1,10 +1,10 @@
 {
   "date": "20260501",
-  "generated_at": "2026-05-01T10:26:04.848451",
+  "generated_at": "2026-05-01T10:32:47.856722",
   "total": 30,
   "market_signal": {
-    "signal": "📈 매수 우위",
-    "signal_en": "BUY",
+    "signal": "⚖️ 관망",
+    "signal_en": "WATCH",
     "reason": "MA5>MA20 골든크로스 · MA20>MA60 중기 상승",
     "kospi_close": 6598.87,
     "ma5": 6604.29,
@@ -12,7 +12,9 @@
     "ma60": 5735.74,
     "kospi_ch5": 1.9,
     "kospi_ch20": 22.72,
-    "aligned": "혼조"
+    "aligned": "혼조",
+    "kosdaq_close": 1192.35,
+    "kosdaq_ch5": -0.95
   },
   "results": [
     {
