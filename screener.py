@@ -61,13 +61,23 @@ def fetch_market_signal(tok) -> dict:
         "reason": "데이터 없음",
         "kospi_close": 0, "ma5": 0, "ma20": 0, "ma60": 0,
         "kospi_ch5": 0, "kospi_ch20": 0, "aligned": "",
+        "kosdaq_close": 0, "kosdaq_ch5": 0,
     }
     try:
-        # FDR로 KOSPI 지수 90일치 (MA60 계산에 충분한 데이터)
+        # FDR로 KOSPI/KOSDAQ 지수 (MA60 계산에 충분한 데이터)
         now = datetime.now()
         s   = (now - timedelta(days=120)).strftime("%Y-%m-%d")
         e   = now.strftime("%Y-%m-%d")
         df  = fdr.DataReader("KS11", s, e)
+
+        # KOSDAQ 지수도 조회
+        try:
+            df_kq = fdr.DataReader("KQ11", s, e)
+            if df_kq is not None and len(df_kq) >= 2:
+                kq_prices = list(df_kq["Close"].dropna())[::-1]
+                result["kosdaq_close"] = round(kq_prices[0], 2)
+                result["kosdaq_ch5"]   = round((kq_prices[0]-kq_prices[4])/kq_prices[4]*100, 2) if len(kq_prices)>=5 and kq_prices[4]>0 else 0
+        except: pass
 
         if df is None or len(df) < 20:
             # KIS API fallback
@@ -141,13 +151,19 @@ def fetch_market_signal(tok) -> dict:
         elif below_all and not is_golden and not is_above_60:
             result["signal"]    = "📉 매도 우위"
             result["signal_en"] = "SELL"
-        elif above_all or (is_golden and is_above_60):
+        # 현재가 MA5 위에 있어야 단기 상승 흐름 확인
+        price_above_ma5 = close > ma5
+
+        if price_above_ma5 and is_golden and is_above_60:
+            # 현재가>MA5 + 골든크로스 + 중기상승 → 매수
             result["signal"]    = "📈 매수 우위"
             result["signal_en"] = "BUY"
         elif below_all or (not is_golden and not is_above_60):
+            # 역배열 or 데드크로스+중기하락 → 매도
             result["signal"]    = "📉 매도 우위"
             result["signal_en"] = "SELL"
         else:
+            # 현재가 MA5 아래거나 조건 혼조 → 관망
             result["signal"]    = "⚖️ 관망"
             result["signal_en"] = "WATCH"
 
@@ -457,8 +473,8 @@ def main():
     date = now_kst.strftime("%Y%m%d")
     print(f"  기준일: {date} ({now_kst.strftime('%H:%M')} KST)")
     print(f"  등급: ROE≥15%(A) PER≤15배(A) EPS≥1(A) EPS상승(A) → 3개이상=추천")
-    print(f"  단타: 거래대금추세≥20% + 5일 5~20% + 20일<30% + B등급이상")
-    print(f"  장투: ROE≥15% + EPS상승 + PER≤25배 + (PBR≤1.5 or 배당주)")
+    print(f"  단타: 거래대금추세≥30% + 5일 5~20% + 20일<50% + B등급이상")
+    print(f"  장투: ROE≥15% + EPS상승 + PER≤20배 + (PBR≤1.5 or 배당주)")
 
     print("\n[0] KIS 토큰 발급 중...")
     try: tok=get_token()
