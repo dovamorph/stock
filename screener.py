@@ -219,7 +219,7 @@ def get_trade_label(d: dict) -> dict:
     # 현재 한국 시장 PER 수준 감안해 25배로 완화, 나머지는 엄격 유지
     cond_roe   = roe >= 15                          # ROE 15% 이상
     cond_eps   = eps_trend == "상승" and eps >= 1   # EPS 상승 + 흑자
-    cond_per   = 0 < per <= 25                      # PER 25배 이하
+    cond_per   = 0 < per <= 20                      # PER 20배 이하 (엄격)
     cond_value = (0 < pbr <= 1.5) or is_div         # PBR 1.5 이하 or 배당주
     is_jangtu  = cond_roe and cond_eps and cond_per and cond_value
 
