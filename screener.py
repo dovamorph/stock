@@ -452,8 +452,10 @@ def main():
     if not APP_KEY or not APP_SECRET:
         print("❌ KIS_APP_KEY / KIS_APP_SECRET 없음"); return
 
-    date=datetime.now().strftime("%Y%m%d")
-    print(f"  기준일: {date} ({datetime.now().strftime('%H:%M')} KST)")
+    now_utc = datetime.utcnow()
+    now_kst = now_utc + timedelta(hours=9)
+    date = now_kst.strftime("%Y%m%d")
+    print(f"  기준일: {date} ({now_kst.strftime('%H:%M')} KST)")
     print(f"  등급: ROE≥15%(A) PER≤15배(A) EPS≥1(A) EPS상승(A) → 3개이상=추천")
     print(f"  단타: 거래대금추세≥20% + 5일 5~20% + 20일<30% + B등급이상")
     print(f"  장투: ROE≥15% + EPS상승 + PER≤25배 + (PBR≤1.5 or 배당주)")
@@ -521,7 +523,7 @@ def main():
 
     json.dump({
         "date":          date,
-        "generated_at":  datetime.now().isoformat(),
+        "generated_at":  now_kst.isoformat(),
         "total":         len(results),
         "market_signal": market_signal,
         "results":       results,
