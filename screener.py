@@ -172,26 +172,33 @@ def fetch_market_signal(tok) -> dict:
         if ch5 >= 2:   reasons.append(f"5일 +{ch5:.1f}%↑")
         elif ch5 <= -2: reasons.append(f"5일 {ch5:.1f}%↓")
 
-        # ── 시그널 결정 ──
-        if above_all and is_golden and is_above_60:
-            result["signal"]    = "📈 매수 우위"
-            result["signal_en"] = "BUY"
-        elif below_all and not is_golden and not is_above_60:
-            result["signal"]    = "📉 매도 우위"
-            result["signal_en"] = "SELL"
-        # 현재가 MA5 위에 있어야 단기 상승 흐름 확인
-        price_above_ma5 = close > ma5
+        # ── 종합 점수제 시그널 결정 ──
+        # MA 배열 점수
+        kr_score = 0
+        if above_all:           kr_score += 2   # 완전 정배열
+        elif close > ma5:       kr_score += 1   # 현가>MA5
+        if below_all:           kr_score -= 2   # 완전 역배열
+        elif close < ma5:       kr_score -= 1   # 현가<MA5
+        if is_golden:           kr_score += 1   # 골든크로스
+        else:                   kr_score -= 1   # 데드크로스
+        if is_above_60:         kr_score += 1   # 중기 상승
+        else:                   kr_score -= 1   # 중기 하락
 
-        if price_above_ma5 and is_golden and is_above_60:
-            # 현재가>MA5 + 골든크로스 + 중기상승 → 매수
+        # RSI 점수 반영
+        if rsi_14 > 75:         kr_score -= 2   # 강한 과매수 → 조정 위험
+        elif rsi_14 > 70:       kr_score -= 1   # 과매수 → 주의
+        elif rsi_14 < 25:       kr_score += 2   # 강한 과매도 → 반등 기대
+        elif rsi_14 < 30:       kr_score += 1   # 과매도 → 매수 기회
+
+        result["kr_score"] = kr_score
+
+        if kr_score >= 3:
             result["signal"]    = "📈 매수 우위"
             result["signal_en"] = "BUY"
-        elif below_all or (not is_golden and not is_above_60):
-            # 역배열 or 데드크로스+중기하락 → 매도
+        elif kr_score <= -3:
             result["signal"]    = "📉 매도 우위"
             result["signal_en"] = "SELL"
         else:
-            # 현재가 MA5 아래거나 조건 혼조 → 관망
             result["signal"]    = "⚖️ 관망"
             result["signal_en"] = "WATCH"
 
@@ -703,30 +710,50 @@ def main():
     us_signal = fetch_us_signal()
     market_signal["us"] = us_signal
 
-    # 한국+미국 종합 최종 시그널
-    kr_en = market_signal.get("signal_en","WATCH")
-    us_en = us_signal.get("us_signal_en","WATCH")
-    if kr_en=="BUY" and us_en=="BUY":
+    # ── 한국+미국 종합 최종 점수제 ──
+    kr_score = market_signal.get("kr_score", 0)
+    us_score = 0
+    us_en    = us_signal.get("us_signal_en","WATCH")
+    if us_en == "BUY":    us_score =  2
+    elif us_en == "SELL": us_score = -2
+
+    # VIX 반영
+    vix_val = us_signal.get("vix_close", 0)
+    if vix_val > 0:
+        if vix_val < 15:    us_score -= 1   # 과도한 낙관 주의
+        elif vix_val < 20:  us_score += 1   # 안정
+        elif vix_val < 25:  us_score -= 1   # 불안
+        elif vix_val < 35:  us_score -= 2   # 공포
+
+    total_score = kr_score + us_score
+    reasons_final = []
+    if kr_score >= 3:  reasons_final.append("한국 상승추세")
+    elif kr_score <= -3: reasons_final.append("한국 하락추세")
+    else:              reasons_final.append("한국 혼조")
+    if us_en == "BUY": reasons_final.append("미국 상승장")
+    elif us_en == "SELL": reasons_final.append("미국 하락장")
+    if vix_val > 25:   reasons_final.append(f"VIX {vix_val:.0f} 공포")
+    elif vix_val < 15 and vix_val > 0: reasons_final.append(f"VIX {vix_val:.0f} 과열낙관")
+
+    if total_score >= 4:
         market_signal["final_signal"]    = "📈 강한 매수"
         market_signal["final_signal_en"] = "STRONG_BUY"
-        market_signal["final_reason"]    = "한국 + 미국 동시 상승추세"
-    elif kr_en=="SELL" and us_en=="SELL":
-        market_signal["final_signal"]    = "📉 강한 매도"
-        market_signal["final_signal_en"] = "STRONG_SELL"
-        market_signal["final_reason"]    = "한국 + 미국 동시 하락추세"
-    elif kr_en=="BUY" or us_en=="BUY":
+    elif total_score >= 2:
         market_signal["final_signal"]    = "📈 매수 우위"
         market_signal["final_signal_en"] = "BUY"
-        market_signal["final_reason"]    = "한국/미국 중 상승추세"
-    elif kr_en=="SELL" or us_en=="SELL":
+    elif total_score <= -4:
+        market_signal["final_signal"]    = "📉 강한 매도"
+        market_signal["final_signal_en"] = "STRONG_SELL"
+    elif total_score <= -2:
         market_signal["final_signal"]    = "📉 매도 우위"
         market_signal["final_signal_en"] = "SELL"
-        market_signal["final_reason"]    = "한국/미국 중 하락추세"
     else:
         market_signal["final_signal"]    = "⚖️ 관망"
         market_signal["final_signal_en"] = "WATCH"
-        market_signal["final_reason"]    = "한국 + 미국 모두 혼조"
-    print(f"  최종 시그널: {market_signal['final_signal']} ({market_signal['final_reason']})")
+
+    market_signal["final_reason"]  = " · ".join(reasons_final)
+    market_signal["total_score"]   = total_score
+    print(f"  최종 시그널: {market_signal['final_signal']} (점수 {total_score:+d} | {market_signal['final_reason']})")
 
     candidates=load_candidates()
     if not candidates: print("❌ 후보 로드 실패"); return
