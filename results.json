@@ -1,6 +1,6 @@
 {
   "date": "20260503",
-  "generated_at": "2026-05-03T22:39:43.701683",
+  "generated_at": "2026-05-03T22:49:05.149247",
   "total": 100,
   "market_signal": {
     "signal": "⚖️ 관망",
@@ -68,6 +68,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 3,
         "grade": "C",
         "recommended": false
@@ -109,6 +110,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 4,
         "grade": "B",
         "recommended": true
@@ -150,6 +152,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 3,
         "grade": "C",
         "recommended": false
@@ -191,6 +194,7 @@
         "eps_ok": true,
         "eps_up": false,
         "debt_ok": true,
+        "is_finance": false,
         "score": 2,
         "grade": "D",
         "recommended": false
@@ -232,6 +236,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 4,
         "grade": "B",
         "recommended": true
@@ -273,6 +278,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 3,
         "grade": "C",
         "recommended": false
@@ -314,6 +320,7 @@
         "eps_ok": false,
         "eps_up": false,
         "debt_ok": false,
+        "is_finance": false,
         "score": 0,
         "grade": "F",
         "recommended": false
@@ -355,6 +362,7 @@
         "eps_ok": true,
         "eps_up": false,
         "debt_ok": true,
+        "is_finance": false,
         "score": 2,
         "grade": "D",
         "recommended": false
@@ -396,6 +404,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 4,
         "grade": "B",
         "recommended": true
@@ -437,6 +446,7 @@
         "eps_ok": false,
         "eps_up": false,
         "debt_ok": true,
+        "is_finance": false,
         "score": 1,
         "grade": "F",
         "recommended": false
@@ -478,6 +488,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 3,
         "grade": "C",
         "recommended": false
@@ -519,6 +530,7 @@
         "eps_ok": false,
         "eps_up": false,
         "debt_ok": true,
+        "is_finance": false,
         "score": 1,
         "grade": "F",
         "recommended": false
@@ -560,6 +572,7 @@
         "eps_ok": false,
         "eps_up": false,
         "debt_ok": false,
+        "is_finance": false,
         "score": 0,
         "grade": "F",
         "recommended": false
@@ -601,6 +614,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 5,
         "grade": "A",
         "recommended": true
@@ -642,6 +656,7 @@
         "eps_ok": true,
         "eps_up": false,
         "debt_ok": true,
+        "is_finance": false,
         "score": 2,
         "grade": "D",
         "recommended": false
@@ -683,6 +698,7 @@
         "eps_ok": false,
         "eps_up": false,
         "debt_ok": false,
+        "is_finance": false,
         "score": 0,
         "grade": "F",
         "recommended": false
@@ -724,6 +740,7 @@
         "eps_ok": true,
         "eps_up": false,
         "debt_ok": true,
+        "is_finance": false,
         "score": 2,
         "grade": "D",
         "recommended": false
@@ -765,6 +782,7 @@
         "eps_ok": false,
         "eps_up": false,
         "debt_ok": false,
+        "is_finance": false,
         "score": 0,
         "grade": "F",
         "recommended": false
@@ -806,6 +824,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": false,
+        "is_finance": false,
         "score": 3,
         "grade": "C",
         "recommended": false
@@ -846,13 +865,14 @@
         "per_ok": false,
         "eps_ok": true,
         "eps_up": true,
-        "debt_ok": false,
-        "score": 2,
-        "grade": "D",
+        "debt_ok": true,
+        "is_finance": true,
+        "score": 3,
+        "grade": "C",
         "recommended": false
       },
-      "grade": "D",
-      "score": 2,
+      "grade": "C",
+      "score": 3,
       "recommended": false,
       "trade_label": "–",
       "trade_label_text": "",
@@ -888,6 +908,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 3,
         "grade": "C",
         "recommended": false
@@ -929,6 +950,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": false,
+        "is_finance": false,
         "score": 3,
         "grade": "C",
         "recommended": false
@@ -970,6 +992,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 3,
         "grade": "C",
         "recommended": false
@@ -1011,6 +1034,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 3,
         "grade": "C",
         "recommended": false
@@ -1052,6 +1076,7 @@
         "eps_ok": false,
         "eps_up": false,
         "debt_ok": false,
+        "is_finance": false,
         "score": 0,
         "grade": "F",
         "recommended": false
@@ -1093,6 +1118,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 3,
         "grade": "C",
         "recommended": false
@@ -1134,6 +1160,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 4,
         "grade": "B",
         "recommended": true
@@ -1174,14 +1201,15 @@
         "per_ok": true,
         "eps_ok": true,
         "eps_up": true,
-        "debt_ok": false,
-        "score": 3,
-        "grade": "C",
-        "recommended": false
+        "debt_ok": true,
+        "is_finance": true,
+        "score": 4,
+        "grade": "B",
+        "recommended": true
       },
-      "grade": "C",
-      "score": 3,
-      "recommended": false,
+      "grade": "B",
+      "score": 4,
+      "recommended": true,
       "trade_label": "–",
       "trade_label_text": "",
       "is_danta": false,
@@ -1192,47 +1220,6 @@
     },
     {
       "rank": 29,
-      "ticker": "005490",
-      "name": "POSCO홀딩스",
-      "market": "KOSPI",
-      "tvol": 2630,
-      "per": 57.14,
-      "pbr": 0.63,
-      "eps": 8085.0,
-      "bps": 736969.0,
-      "roe": 1.1,
-      "close": 462000.0,
-      "eps_trend": "유지",
-      "eps_growth": 0.0,
-      "debt_ratio": 68.6,
-      "ch20": 32.9,
-      "ch5": 11.3,
-      "vol_trend": 51.1,
-      "rsi": 81.6,
-      "is_dividend": true,
-      "filters": {
-        "roe_ok": false,
-        "per_ok": false,
-        "eps_ok": true,
-        "eps_up": false,
-        "debt_ok": true,
-        "score": 2,
-        "grade": "D",
-        "recommended": false
-      },
-      "grade": "D",
-      "score": 2,
-      "recommended": false,
-      "trade_label": "–",
-      "trade_label_text": "",
-      "is_danta": false,
-      "is_jangtu": false,
-      "_d_vol": 51.1,
-      "_d_ch5": 11.3,
-      "_d_ch20": 32.9
-    },
-    {
-      "rank": 30,
       "ticker": "046890",
       "name": "서울반도체",
       "market": "KOSDAQ",
@@ -1257,6 +1244,7 @@
         "eps_ok": false,
         "eps_up": false,
         "debt_ok": true,
+        "is_finance": false,
         "score": 1,
         "grade": "F",
         "recommended": false
@@ -1273,7 +1261,7 @@
       "_d_ch20": 85.5
     },
     {
-      "rank": 31,
+      "rank": 30,
       "ticker": "079550",
       "name": "LIG디펜스앤에어로스페이스",
       "market": "KOSPI",
@@ -1298,6 +1286,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": false,
+        "is_finance": false,
         "score": 3,
         "grade": "C",
         "recommended": false
@@ -1314,7 +1303,7 @@
       "_d_ch20": 9.4
     },
     {
-      "rank": 32,
+      "rank": 31,
       "ticker": "373220",
       "name": "LG에너지솔루션",
       "market": "KOSPI",
@@ -1339,6 +1328,7 @@
         "eps_ok": false,
         "eps_up": false,
         "debt_ok": true,
+        "is_finance": false,
         "score": 1,
         "grade": "F",
         "recommended": false
@@ -1355,7 +1345,7 @@
       "_d_ch20": 15.6
     },
     {
-      "rank": 33,
+      "rank": 32,
       "ticker": "007660",
       "name": "이수페타시스",
       "market": "KOSPI",
@@ -1380,6 +1370,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 4,
         "grade": "B",
         "recommended": true
@@ -1396,7 +1387,7 @@
       "_d_ch20": 46.5
     },
     {
-      "rank": 34,
+      "rank": 33,
       "ticker": "010130",
       "name": "고려아연",
       "market": "KOSPI",
@@ -1421,6 +1412,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 3,
         "grade": "C",
         "recommended": false
@@ -1437,7 +1429,7 @@
       "_d_ch20": 6.4
     },
     {
-      "rank": 35,
+      "rank": 34,
       "ticker": "178320",
       "name": "서진시스템",
       "market": "KOSDAQ",
@@ -1462,6 +1454,7 @@
         "eps_ok": false,
         "eps_up": false,
         "debt_ok": false,
+        "is_finance": false,
         "score": 0,
         "grade": "F",
         "recommended": false
@@ -1478,7 +1471,7 @@
       "_d_ch20": 31.6
     },
     {
-      "rank": 36,
+      "rank": 35,
       "ticker": "298040",
       "name": "효성중공업",
       "market": "KOSPI",
@@ -1503,6 +1496,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 4,
         "grade": "B",
         "recommended": true
@@ -1519,7 +1513,7 @@
       "_d_ch20": 52.8
     },
     {
-      "rank": 37,
+      "rank": 36,
       "ticker": "454910",
       "name": "두산로보틱스",
       "market": "KOSPI",
@@ -1544,6 +1538,7 @@
         "eps_ok": false,
         "eps_up": false,
         "debt_ok": true,
+        "is_finance": false,
         "score": 1,
         "grade": "F",
         "recommended": false
@@ -1560,7 +1555,7 @@
       "_d_ch20": 33.6
     },
     {
-      "rank": 38,
+      "rank": 37,
       "ticker": "001510",
       "name": "SK증권",
       "market": "KOSPI",
@@ -1584,13 +1579,14 @@
         "per_ok": false,
         "eps_ok": true,
         "eps_up": false,
-        "debt_ok": false,
-        "score": 1,
-        "grade": "F",
+        "debt_ok": true,
+        "is_finance": true,
+        "score": 2,
+        "grade": "D",
         "recommended": false
       },
-      "grade": "F",
-      "score": 1,
+      "grade": "D",
+      "score": 2,
       "recommended": false,
       "trade_label": "–",
       "trade_label_text": "",
@@ -1601,7 +1597,7 @@
       "_d_ch20": 164.5
     },
     {
-      "rank": 39,
+      "rank": 38,
       "ticker": "000720",
       "name": "현대건설",
       "market": "KOSPI",
@@ -1626,6 +1622,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 3,
         "grade": "C",
         "recommended": false
@@ -1642,7 +1639,7 @@
       "_d_ch20": 7.1
     },
     {
-      "rank": 40,
+      "rank": 39,
       "ticker": "267260",
       "name": "HD현대일렉트릭",
       "market": "KOSPI",
@@ -1667,6 +1664,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 4,
         "grade": "B",
         "recommended": true
@@ -1683,7 +1681,7 @@
       "_d_ch20": 41.8
     },
     {
-      "rank": 41,
+      "rank": 40,
       "ticker": "489790",
       "name": "한화비전",
       "market": "KOSPI",
@@ -1708,6 +1706,7 @@
         "eps_ok": true,
         "eps_up": false,
         "debt_ok": true,
+        "is_finance": false,
         "score": 2,
         "grade": "D",
         "recommended": false
@@ -1724,7 +1723,7 @@
       "_d_ch20": 18.6
     },
     {
-      "rank": 42,
+      "rank": 41,
       "ticker": "086520",
       "name": "에코프로",
       "market": "KOSDAQ",
@@ -1749,6 +1748,7 @@
         "eps_ok": false,
         "eps_up": false,
         "debt_ok": true,
+        "is_finance": false,
         "score": 1,
         "grade": "F",
         "recommended": false
@@ -1765,7 +1765,7 @@
       "_d_ch20": 8.1
     },
     {
-      "rank": 43,
+      "rank": 42,
       "ticker": "027360",
       "name": "아주IB투자",
       "market": "KOSDAQ",
@@ -1790,6 +1790,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 3,
         "grade": "C",
         "recommended": false
@@ -1806,7 +1807,7 @@
       "_d_ch20": 69.9
     },
     {
-      "rank": 44,
+      "rank": 43,
       "ticker": "000270",
       "name": "기아",
       "market": "KOSPI",
@@ -1831,6 +1832,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 4,
         "grade": "B",
         "recommended": true
@@ -1847,7 +1849,7 @@
       "_d_ch20": 1.1
     },
     {
-      "rank": 45,
+      "rank": 44,
       "ticker": "475150",
       "name": "SK이터닉스",
       "market": "KOSPI",
@@ -1872,6 +1874,7 @@
         "eps_ok": true,
         "eps_up": false,
         "debt_ok": false,
+        "is_finance": false,
         "score": 1,
         "grade": "F",
         "recommended": false
@@ -1888,7 +1891,7 @@
       "_d_ch20": -15.0
     },
     {
-      "rank": 46,
+      "rank": 45,
       "ticker": "352820",
       "name": "하이브",
       "market": "KOSPI",
@@ -1913,6 +1916,7 @@
         "eps_ok": false,
         "eps_up": false,
         "debt_ok": true,
+        "is_finance": false,
         "score": 1,
         "grade": "F",
         "recommended": false
@@ -1929,7 +1933,7 @@
       "_d_ch20": -2.6
     },
     {
-      "rank": 47,
+      "rank": 46,
       "ticker": "000150",
       "name": "두산",
       "market": "KOSPI",
@@ -1954,6 +1958,7 @@
         "eps_ok": true,
         "eps_up": false,
         "debt_ok": true,
+        "is_finance": false,
         "score": 2,
         "grade": "D",
         "recommended": false
@@ -1970,7 +1975,7 @@
       "_d_ch20": 49.0
     },
     {
-      "rank": 48,
+      "rank": 47,
       "ticker": "440110",
       "name": "파두",
       "market": "KOSDAQ",
@@ -1995,6 +2000,7 @@
         "eps_ok": false,
         "eps_up": false,
         "debt_ok": false,
+        "is_finance": false,
         "score": 0,
         "grade": "F",
         "recommended": false
@@ -2011,7 +2017,7 @@
       "_d_ch20": 54.9
     },
     {
-      "rank": 49,
+      "rank": 48,
       "ticker": "055550",
       "name": "신한지주",
       "market": "KOSPI",
@@ -2035,14 +2041,15 @@
         "per_ok": true,
         "eps_ok": true,
         "eps_up": true,
-        "debt_ok": false,
-        "score": 3,
-        "grade": "C",
-        "recommended": false
+        "debt_ok": true,
+        "is_finance": true,
+        "score": 4,
+        "grade": "B",
+        "recommended": true
       },
-      "grade": "C",
-      "score": 3,
-      "recommended": false,
+      "grade": "B",
+      "score": 4,
+      "recommended": true,
       "trade_label": "–",
       "trade_label_text": "",
       "is_danta": false,
@@ -2052,7 +2059,7 @@
       "_d_ch20": 8.8
     },
     {
-      "rank": 50,
+      "rank": 49,
       "ticker": "011070",
       "name": "LG이노텍",
       "market": "KOSPI",
@@ -2077,6 +2084,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 3,
         "grade": "C",
         "recommended": false
@@ -2093,7 +2101,7 @@
       "_d_ch20": 76.6
     },
     {
-      "rank": 51,
+      "rank": 50,
       "ticker": "096770",
       "name": "SK이노베이션",
       "market": "KOSPI",
@@ -2118,6 +2126,7 @@
         "eps_ok": false,
         "eps_up": false,
         "debt_ok": true,
+        "is_finance": false,
         "score": 1,
         "grade": "F",
         "recommended": false
@@ -2134,7 +2143,7 @@
       "_d_ch20": 23.7
     },
     {
-      "rank": 52,
+      "rank": 51,
       "ticker": "006260",
       "name": "LS",
       "market": "KOSPI",
@@ -2159,6 +2168,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": false,
+        "is_finance": false,
         "score": 2,
         "grade": "D",
         "recommended": false
@@ -2175,7 +2185,7 @@
       "_d_ch20": 69.0
     },
     {
-      "rank": 53,
+      "rank": 52,
       "ticker": "006800",
       "name": "미래에셋증권",
       "market": "KOSPI",
@@ -2199,13 +2209,14 @@
         "per_ok": false,
         "eps_ok": true,
         "eps_up": true,
-        "debt_ok": false,
-        "score": 2,
-        "grade": "D",
+        "debt_ok": true,
+        "is_finance": true,
+        "score": 3,
+        "grade": "C",
         "recommended": false
       },
-      "grade": "D",
-      "score": 2,
+      "grade": "C",
+      "score": 3,
       "recommended": false,
       "trade_label": "–",
       "trade_label_text": "",
@@ -2216,7 +2227,7 @@
       "_d_ch20": 2.7
     },
     {
-      "rank": 54,
+      "rank": 53,
       "ticker": "047810",
       "name": "한국항공우주",
       "market": "KOSPI",
@@ -2241,6 +2252,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": false,
+        "is_finance": false,
         "score": 2,
         "grade": "D",
         "recommended": false
@@ -2257,7 +2269,7 @@
       "_d_ch20": -7.4
     },
     {
-      "rank": 55,
+      "rank": 54,
       "ticker": "278470",
       "name": "에이피알",
       "market": "KOSPI",
@@ -2282,6 +2294,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 4,
         "grade": "B",
         "recommended": true
@@ -2298,7 +2311,7 @@
       "_d_ch20": 29.8
     },
     {
-      "rank": 56,
+      "rank": 55,
       "ticker": "006360",
       "name": "GS건설",
       "market": "KOSPI",
@@ -2323,6 +2336,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": false,
+        "is_finance": false,
         "score": 2,
         "grade": "D",
         "recommended": false
@@ -2339,7 +2353,7 @@
       "_d_ch20": 39.6
     },
     {
-      "rank": 57,
+      "rank": 56,
       "ticker": "042660",
       "name": "한화오션",
       "market": "KOSPI",
@@ -2364,6 +2378,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": false,
+        "is_finance": false,
         "score": 3,
         "grade": "C",
         "recommended": false
@@ -2380,7 +2395,7 @@
       "_d_ch20": 3.0
     },
     {
-      "rank": 58,
+      "rank": 57,
       "ticker": "080220",
       "name": "제주반도체",
       "market": "KOSDAQ",
@@ -2405,6 +2420,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 4,
         "grade": "B",
         "recommended": true
@@ -2421,7 +2437,7 @@
       "_d_ch20": 36.1
     },
     {
-      "rank": 59,
+      "rank": 58,
       "ticker": "103590",
       "name": "일진전기",
       "market": "KOSPI",
@@ -2446,6 +2462,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 4,
         "grade": "B",
         "recommended": true
@@ -2462,7 +2479,7 @@
       "_d_ch20": 72.5
     },
     {
-      "rank": 60,
+      "rank": 59,
       "ticker": "066970",
       "name": "엘앤에프",
       "market": "KOSPI",
@@ -2487,6 +2504,7 @@
         "eps_ok": false,
         "eps_up": false,
         "debt_ok": false,
+        "is_finance": false,
         "score": 0,
         "grade": "F",
         "recommended": false
@@ -2503,7 +2521,7 @@
       "_d_ch20": 17.2
     },
     {
-      "rank": 61,
+      "rank": 60,
       "ticker": "010140",
       "name": "삼성중공업",
       "market": "KOSPI",
@@ -2528,6 +2546,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": false,
+        "is_finance": false,
         "score": 2,
         "grade": "D",
         "recommended": false
@@ -2544,7 +2563,7 @@
       "_d_ch20": 15.9
     },
     {
-      "rank": 62,
+      "rank": 61,
       "ticker": "010060",
       "name": "OCI홀딩스",
       "market": "KOSPI",
@@ -2569,6 +2588,7 @@
         "eps_ok": false,
         "eps_up": false,
         "debt_ok": true,
+        "is_finance": false,
         "score": 1,
         "grade": "F",
         "recommended": false
@@ -2585,7 +2605,7 @@
       "_d_ch20": 60.3
     },
     {
-      "rank": 63,
+      "rank": 62,
       "ticker": "490470",
       "name": "세미파이브",
       "market": "KOSDAQ",
@@ -2610,6 +2630,7 @@
         "eps_ok": false,
         "eps_up": false,
         "debt_ok": true,
+        "is_finance": false,
         "score": 1,
         "grade": "F",
         "recommended": false
@@ -2626,7 +2647,7 @@
       "_d_ch20": 82.2
     },
     {
-      "rank": 64,
+      "rank": 63,
       "ticker": "039490",
       "name": "키움증권",
       "market": "KOSPI",
@@ -2650,13 +2671,14 @@
         "per_ok": true,
         "eps_ok": true,
         "eps_up": true,
-        "debt_ok": false,
-        "score": 4,
-        "grade": "B",
+        "debt_ok": true,
+        "is_finance": true,
+        "score": 5,
+        "grade": "A",
         "recommended": true
       },
-      "grade": "B",
-      "score": 4,
+      "grade": "A",
+      "score": 5,
       "recommended": true,
       "trade_label": "💎",
       "trade_label_text": "장투",
@@ -2667,7 +2689,7 @@
       "_d_ch20": -3.4
     },
     {
-      "rank": 65,
+      "rank": 64,
       "ticker": "277810",
       "name": "레인보우로보틱스",
       "market": "KOSDAQ",
@@ -2692,6 +2714,7 @@
         "eps_ok": true,
         "eps_up": false,
         "debt_ok": true,
+        "is_finance": false,
         "score": 2,
         "grade": "D",
         "recommended": false
@@ -2708,7 +2731,7 @@
       "_d_ch20": 23.0
     },
     {
-      "rank": 66,
+      "rank": 65,
       "ticker": "028260",
       "name": "삼성물산",
       "market": "KOSPI",
@@ -2733,6 +2756,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 3,
         "grade": "C",
         "recommended": false
@@ -2749,7 +2773,7 @@
       "_d_ch20": 13.5
     },
     {
-      "rank": 67,
+      "rank": 66,
       "ticker": "012330",
       "name": "현대모비스",
       "market": "KOSPI",
@@ -2774,6 +2798,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 4,
         "grade": "B",
         "recommended": true
@@ -2790,7 +2815,7 @@
       "_d_ch20": 9.4
     },
     {
-      "rank": 68,
+      "rank": 67,
       "ticker": "098460",
       "name": "고영",
       "market": "KOSDAQ",
@@ -2815,6 +2840,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 3,
         "grade": "C",
         "recommended": false
@@ -2831,7 +2857,7 @@
       "_d_ch20": 52.2
     },
     {
-      "rank": 69,
+      "rank": 68,
       "ticker": "090710",
       "name": "휴림로봇",
       "market": "KOSDAQ",
@@ -2856,6 +2882,7 @@
         "eps_ok": false,
         "eps_up": false,
         "debt_ok": true,
+        "is_finance": false,
         "score": 1,
         "grade": "F",
         "recommended": false
@@ -2872,7 +2899,7 @@
       "_d_ch20": 16.0
     },
     {
-      "rank": 70,
+      "rank": 69,
       "ticker": "417200",
       "name": "LS머트리얼즈",
       "market": "KOSDAQ",
@@ -2897,6 +2924,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 3,
         "grade": "C",
         "recommended": false
@@ -2913,7 +2941,7 @@
       "_d_ch20": 43.8
     },
     {
-      "rank": 71,
+      "rank": 70,
       "ticker": "047050",
       "name": "포스코인터내셔널",
       "market": "KOSPI",
@@ -2938,6 +2966,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 3,
         "grade": "C",
         "recommended": false
@@ -2954,7 +2983,7 @@
       "_d_ch20": 2.6
     },
     {
-      "rank": 72,
+      "rank": 71,
       "ticker": "086790",
       "name": "하나금융지주",
       "market": "KOSPI",
@@ -2978,14 +3007,15 @@
         "per_ok": true,
         "eps_ok": true,
         "eps_up": true,
-        "debt_ok": false,
-        "score": 3,
-        "grade": "C",
-        "recommended": false
+        "debt_ok": true,
+        "is_finance": true,
+        "score": 4,
+        "grade": "B",
+        "recommended": true
       },
-      "grade": "C",
-      "score": 3,
-      "recommended": false,
+      "grade": "B",
+      "score": 4,
+      "recommended": true,
       "trade_label": "–",
       "trade_label_text": "",
       "is_danta": false,
@@ -2995,7 +3025,7 @@
       "_d_ch20": 16.6
     },
     {
-      "rank": 73,
+      "rank": 72,
       "ticker": "222080",
       "name": "씨아이에스",
       "market": "KOSDAQ",
@@ -3020,6 +3050,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 3,
         "grade": "C",
         "recommended": false
@@ -3036,7 +3067,7 @@
       "_d_ch20": 47.1
     },
     {
-      "rank": 74,
+      "rank": 73,
       "ticker": "051910",
       "name": "LG화학",
       "market": "KOSPI",
@@ -3061,6 +3092,7 @@
         "eps_ok": false,
         "eps_up": false,
         "debt_ok": true,
+        "is_finance": false,
         "score": 1,
         "grade": "F",
         "recommended": false
@@ -3077,7 +3109,7 @@
       "_d_ch20": 30.4
     },
     {
-      "rank": 75,
+      "rank": 74,
       "ticker": "375500",
       "name": "DL이앤씨",
       "market": "KOSPI",
@@ -3102,6 +3134,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 4,
         "grade": "B",
         "recommended": true
@@ -3118,7 +3151,7 @@
       "_d_ch20": 32.0
     },
     {
-      "rank": 76,
+      "rank": 75,
       "ticker": "015760",
       "name": "한국전력",
       "market": "KOSPI",
@@ -3143,6 +3176,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": false,
+        "is_finance": false,
         "score": 4,
         "grade": "B",
         "recommended": true
@@ -3159,7 +3193,7 @@
       "_d_ch20": 8.1
     },
     {
-      "rank": 77,
+      "rank": 76,
       "ticker": "017670",
       "name": "SK텔레콤",
       "market": "KOSPI",
@@ -3184,6 +3218,7 @@
         "eps_ok": true,
         "eps_up": false,
         "debt_ok": true,
+        "is_finance": false,
         "score": 2,
         "grade": "D",
         "recommended": false
@@ -3200,7 +3235,7 @@
       "_d_ch20": 17.6
     },
     {
-      "rank": 78,
+      "rank": 77,
       "ticker": "032820",
       "name": "우리기술",
       "market": "KOSDAQ",
@@ -3225,6 +3260,7 @@
         "eps_ok": true,
         "eps_up": false,
         "debt_ok": true,
+        "is_finance": false,
         "score": 2,
         "grade": "D",
         "recommended": false
@@ -3241,7 +3277,7 @@
       "_d_ch20": 0
     },
     {
-      "rank": 79,
+      "rank": 78,
       "ticker": "003670",
       "name": "포스코퓨처엠",
       "market": "KOSPI",
@@ -3266,6 +3302,7 @@
         "eps_ok": true,
         "eps_up": false,
         "debt_ok": true,
+        "is_finance": false,
         "score": 2,
         "grade": "D",
         "recommended": false
@@ -3282,7 +3319,7 @@
       "_d_ch20": 19.1
     },
     {
-      "rank": 80,
+      "rank": 79,
       "ticker": "353200",
       "name": "대덕전자",
       "market": "KOSPI",
@@ -3307,6 +3344,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 3,
         "grade": "C",
         "recommended": false
@@ -3323,7 +3361,7 @@
       "_d_ch20": 38.9
     },
     {
-      "rank": 81,
+      "rank": 80,
       "ticker": "247540",
       "name": "에코프로비엠",
       "market": "KOSDAQ",
@@ -3348,6 +3386,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 3,
         "grade": "C",
         "recommended": false
@@ -3364,7 +3403,7 @@
       "_d_ch20": 7.0
     },
     {
-      "rank": 82,
+      "rank": 81,
       "ticker": "267270",
       "name": "HD건설기계",
       "market": "KOSPI",
@@ -3389,6 +3428,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 3,
         "grade": "C",
         "recommended": false
@@ -3405,7 +3445,7 @@
       "_d_ch20": 25.9
     },
     {
-      "rank": 83,
+      "rank": 82,
       "ticker": "108490",
       "name": "로보티즈",
       "market": "KOSDAQ",
@@ -3430,6 +3470,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 3,
         "grade": "C",
         "recommended": false
@@ -3446,7 +3487,7 @@
       "_d_ch20": 28.7
     },
     {
-      "rank": 84,
+      "rank": 83,
       "ticker": "010950",
       "name": "S-Oil",
       "market": "KOSPI",
@@ -3471,6 +3512,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 3,
         "grade": "C",
         "recommended": false
@@ -3487,7 +3529,7 @@
       "_d_ch20": 20.7
     },
     {
-      "rank": 85,
+      "rank": 84,
       "ticker": "033100",
       "name": "제룡전기",
       "market": "KOSDAQ",
@@ -3512,6 +3554,7 @@
         "eps_ok": false,
         "eps_up": false,
         "debt_ok": false,
+        "is_finance": false,
         "score": 0,
         "grade": "F",
         "recommended": false
@@ -3528,7 +3571,7 @@
       "_d_ch20": 57.8
     },
     {
-      "rank": 86,
+      "rank": 85,
       "ticker": "259960",
       "name": "크래프톤",
       "market": "KOSPI",
@@ -3553,6 +3596,7 @@
         "eps_ok": true,
         "eps_up": false,
         "debt_ok": true,
+        "is_finance": false,
         "score": 2,
         "grade": "D",
         "recommended": false
@@ -3569,7 +3613,7 @@
       "_d_ch20": 8.8
     },
     {
-      "rank": 87,
+      "rank": 86,
       "ticker": "036930",
       "name": "주성엔지니어링",
       "market": "KOSDAQ",
@@ -3594,6 +3638,7 @@
         "eps_ok": true,
         "eps_up": false,
         "debt_ok": true,
+        "is_finance": false,
         "score": 2,
         "grade": "D",
         "recommended": false
@@ -3610,7 +3655,7 @@
       "_d_ch20": 102.6
     },
     {
-      "rank": 88,
+      "rank": 87,
       "ticker": "034730",
       "name": "SK",
       "market": "KOSPI",
@@ -3635,6 +3680,7 @@
         "eps_ok": true,
         "eps_up": false,
         "debt_ok": true,
+        "is_finance": false,
         "score": 2,
         "grade": "D",
         "recommended": false
@@ -3649,6 +3695,48 @@
       "_d_vol": 22.9,
       "_d_ch5": 6.6,
       "_d_ch20": 36.0
+    },
+    {
+      "rank": 88,
+      "ticker": "196170",
+      "name": "알테오젠",
+      "market": "KOSDAQ",
+      "tvol": 977,
+      "per": 139.95,
+      "pbr": 44.63,
+      "eps": 2633.0,
+      "bps": 8257.0,
+      "roe": 31.9,
+      "close": 368500.0,
+      "eps_trend": "상승",
+      "eps_growth": 95.5,
+      "debt_ratio": 53.8,
+      "ch20": 0.8,
+      "ch5": -0.1,
+      "vol_trend": 15.8,
+      "rsi": 53.7,
+      "is_dividend": true,
+      "filters": {
+        "roe_ok": true,
+        "per_ok": false,
+        "eps_ok": true,
+        "eps_up": true,
+        "debt_ok": true,
+        "is_finance": false,
+        "score": 4,
+        "grade": "B",
+        "recommended": true
+      },
+      "grade": "B",
+      "score": 4,
+      "recommended": true,
+      "trade_label": "–",
+      "trade_label_text": "",
+      "is_danta": false,
+      "is_jangtu": false,
+      "_d_vol": 15.8,
+      "_d_ch5": -0.1,
+      "_d_ch20": 0.8
     },
     {
       "rank": 89,
@@ -3676,6 +3764,7 @@
         "eps_ok": true,
         "eps_up": false,
         "debt_ok": false,
+        "is_finance": false,
         "score": 2,
         "grade": "D",
         "recommended": false
@@ -3717,6 +3806,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 3,
         "grade": "C",
         "recommended": false
@@ -3758,6 +3848,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 3,
         "grade": "C",
         "recommended": false
@@ -3799,6 +3890,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 3,
         "grade": "C",
         "recommended": false
@@ -3840,6 +3932,7 @@
         "eps_ok": false,
         "eps_up": false,
         "debt_ok": true,
+        "is_finance": false,
         "score": 1,
         "grade": "F",
         "recommended": false
@@ -3881,6 +3974,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 3,
         "grade": "C",
         "recommended": false
@@ -3922,6 +4016,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 3,
         "grade": "C",
         "recommended": false
@@ -3963,6 +4058,7 @@
         "eps_ok": false,
         "eps_up": false,
         "debt_ok": true,
+        "is_finance": false,
         "score": 1,
         "grade": "F",
         "recommended": false
@@ -4004,6 +4100,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 3,
         "grade": "C",
         "recommended": false
@@ -4045,6 +4142,7 @@
         "eps_ok": false,
         "eps_up": false,
         "debt_ok": false,
+        "is_finance": false,
         "score": 0,
         "grade": "F",
         "recommended": false
@@ -4086,6 +4184,7 @@
         "eps_ok": false,
         "eps_up": false,
         "debt_ok": false,
+        "is_finance": false,
         "score": 0,
         "grade": "F",
         "recommended": false
@@ -4127,6 +4226,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 3,
         "grade": "C",
         "recommended": false
@@ -4170,6 +4270,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 4,
         "grade": "B",
         "recommended": true
@@ -4211,6 +4312,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 4,
         "grade": "B",
         "recommended": true
@@ -4252,6 +4354,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 4,
         "grade": "B",
         "recommended": true
@@ -4293,6 +4396,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 5,
         "grade": "A",
         "recommended": true
@@ -4334,6 +4438,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 4,
         "grade": "B",
         "recommended": true
@@ -4350,7 +4455,49 @@
       "_d_ch20": 42.9
     },
     {
-      "rank": 33,
+      "rank": 28,
+      "ticker": "105560",
+      "name": "KB금융",
+      "market": "KOSPI",
+      "tvol": 2650,
+      "per": 10.62,
+      "pbr": 0.97,
+      "eps": 15116.0,
+      "bps": 164669.0,
+      "roe": 9.2,
+      "close": 160500.0,
+      "eps_trend": "상승",
+      "eps_growth": 14.3,
+      "debt_ratio": 1211.7,
+      "ch20": 10.3,
+      "ch5": 2.0,
+      "vol_trend": 17.3,
+      "rsi": 56.0,
+      "is_dividend": true,
+      "filters": {
+        "roe_ok": false,
+        "per_ok": true,
+        "eps_ok": true,
+        "eps_up": true,
+        "debt_ok": true,
+        "is_finance": true,
+        "score": 4,
+        "grade": "B",
+        "recommended": true
+      },
+      "grade": "B",
+      "score": 4,
+      "recommended": true,
+      "trade_label": "–",
+      "trade_label_text": "",
+      "is_danta": false,
+      "is_jangtu": false,
+      "_d_vol": 17.3,
+      "_d_ch5": 2.0,
+      "_d_ch20": 10.3
+    },
+    {
+      "rank": 32,
       "ticker": "007660",
       "name": "이수페타시스",
       "market": "KOSPI",
@@ -4375,6 +4522,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 4,
         "grade": "B",
         "recommended": true
@@ -4391,7 +4539,7 @@
       "_d_ch20": 46.5
     },
     {
-      "rank": 36,
+      "rank": 35,
       "ticker": "298040",
       "name": "효성중공업",
       "market": "KOSPI",
@@ -4416,6 +4564,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 4,
         "grade": "B",
         "recommended": true
@@ -4432,7 +4581,7 @@
       "_d_ch20": 52.8
     },
     {
-      "rank": 40,
+      "rank": 39,
       "ticker": "267260",
       "name": "HD현대일렉트릭",
       "market": "KOSPI",
@@ -4457,6 +4606,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 4,
         "grade": "B",
         "recommended": true
@@ -4473,7 +4623,7 @@
       "_d_ch20": 41.8
     },
     {
-      "rank": 44,
+      "rank": 43,
       "ticker": "000270",
       "name": "기아",
       "market": "KOSPI",
@@ -4498,6 +4648,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 4,
         "grade": "B",
         "recommended": true
@@ -4514,7 +4665,49 @@
       "_d_ch20": 1.1
     },
     {
-      "rank": 55,
+      "rank": 48,
+      "ticker": "055550",
+      "name": "신한지주",
+      "market": "KOSPI",
+      "tvol": 1660,
+      "per": 9.91,
+      "pbr": 0.82,
+      "eps": 10085.0,
+      "bps": 121468.0,
+      "roe": 8.3,
+      "close": 99900.0,
+      "eps_trend": "상승",
+      "eps_growth": 12.0,
+      "debt_ratio": 1201.9,
+      "ch20": 8.8,
+      "ch5": -0.1,
+      "vol_trend": 32.8,
+      "rsi": 59.7,
+      "is_dividend": true,
+      "filters": {
+        "roe_ok": false,
+        "per_ok": true,
+        "eps_ok": true,
+        "eps_up": true,
+        "debt_ok": true,
+        "is_finance": true,
+        "score": 4,
+        "grade": "B",
+        "recommended": true
+      },
+      "grade": "B",
+      "score": 4,
+      "recommended": true,
+      "trade_label": "–",
+      "trade_label_text": "",
+      "is_danta": false,
+      "is_jangtu": false,
+      "_d_vol": 32.8,
+      "_d_ch5": -0.1,
+      "_d_ch20": 8.8
+    },
+    {
+      "rank": 54,
       "ticker": "278470",
       "name": "에이피알",
       "market": "KOSPI",
@@ -4539,6 +4732,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 4,
         "grade": "B",
         "recommended": true
@@ -4555,7 +4749,7 @@
       "_d_ch20": 29.8
     },
     {
-      "rank": 58,
+      "rank": 57,
       "ticker": "080220",
       "name": "제주반도체",
       "market": "KOSDAQ",
@@ -4580,6 +4774,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 4,
         "grade": "B",
         "recommended": true
@@ -4596,7 +4791,7 @@
       "_d_ch20": 36.1
     },
     {
-      "rank": 59,
+      "rank": 58,
       "ticker": "103590",
       "name": "일진전기",
       "market": "KOSPI",
@@ -4621,6 +4816,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 4,
         "grade": "B",
         "recommended": true
@@ -4637,7 +4833,7 @@
       "_d_ch20": 72.5
     },
     {
-      "rank": 64,
+      "rank": 63,
       "ticker": "039490",
       "name": "키움증권",
       "market": "KOSPI",
@@ -4661,13 +4857,14 @@
         "per_ok": true,
         "eps_ok": true,
         "eps_up": true,
-        "debt_ok": false,
-        "score": 4,
-        "grade": "B",
+        "debt_ok": true,
+        "is_finance": true,
+        "score": 5,
+        "grade": "A",
         "recommended": true
       },
-      "grade": "B",
-      "score": 4,
+      "grade": "A",
+      "score": 5,
       "recommended": true,
       "trade_label": "💎",
       "trade_label_text": "장투",
@@ -4678,7 +4875,7 @@
       "_d_ch20": -3.4
     },
     {
-      "rank": 67,
+      "rank": 66,
       "ticker": "012330",
       "name": "현대모비스",
       "market": "KOSPI",
@@ -4703,6 +4900,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 4,
         "grade": "B",
         "recommended": true
@@ -4719,7 +4917,49 @@
       "_d_ch20": 9.4
     },
     {
-      "rank": 75,
+      "rank": 71,
+      "ticker": "086790",
+      "name": "하나금융지주",
+      "market": "KOSPI",
+      "tvol": 1213,
+      "per": 9.06,
+      "pbr": 0.78,
+      "eps": 14110.0,
+      "bps": 164776.0,
+      "roe": 8.6,
+      "close": 127900.0,
+      "eps_trend": "상승",
+      "eps_growth": 17.3,
+      "debt_ratio": 1377.9,
+      "ch20": 16.6,
+      "ch5": 3.7,
+      "vol_trend": 28.5,
+      "rsi": 74.7,
+      "is_dividend": true,
+      "filters": {
+        "roe_ok": false,
+        "per_ok": true,
+        "eps_ok": true,
+        "eps_up": true,
+        "debt_ok": true,
+        "is_finance": true,
+        "score": 4,
+        "grade": "B",
+        "recommended": true
+      },
+      "grade": "B",
+      "score": 4,
+      "recommended": true,
+      "trade_label": "–",
+      "trade_label_text": "",
+      "is_danta": false,
+      "is_jangtu": false,
+      "_d_vol": 28.5,
+      "_d_ch5": 3.7,
+      "_d_ch20": 16.6
+    },
+    {
+      "rank": 74,
       "ticker": "375500",
       "name": "DL이앤씨",
       "market": "KOSPI",
@@ -4744,6 +4984,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": true,
+        "is_finance": false,
         "score": 4,
         "grade": "B",
         "recommended": true
@@ -4760,7 +5001,7 @@
       "_d_ch20": 32.0
     },
     {
-      "rank": 76,
+      "rank": 75,
       "ticker": "015760",
       "name": "한국전력",
       "market": "KOSPI",
@@ -4785,6 +5026,7 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": false,
+        "is_finance": false,
         "score": 4,
         "grade": "B",
         "recommended": true
@@ -4799,6 +5041,48 @@
       "_d_vol": -15.9,
       "_d_ch5": -5.7,
       "_d_ch20": 8.1
+    },
+    {
+      "rank": 88,
+      "ticker": "196170",
+      "name": "알테오젠",
+      "market": "KOSDAQ",
+      "tvol": 977,
+      "per": 139.95,
+      "pbr": 44.63,
+      "eps": 2633.0,
+      "bps": 8257.0,
+      "roe": 31.9,
+      "close": 368500.0,
+      "eps_trend": "상승",
+      "eps_growth": 95.5,
+      "debt_ratio": 53.8,
+      "ch20": 0.8,
+      "ch5": -0.1,
+      "vol_trend": 15.8,
+      "rsi": 53.7,
+      "is_dividend": true,
+      "filters": {
+        "roe_ok": true,
+        "per_ok": false,
+        "eps_ok": true,
+        "eps_up": true,
+        "debt_ok": true,
+        "is_finance": false,
+        "score": 4,
+        "grade": "B",
+        "recommended": true
+      },
+      "grade": "B",
+      "score": 4,
+      "recommended": true,
+      "trade_label": "–",
+      "trade_label_text": "",
+      "is_danta": false,
+      "is_jangtu": false,
+      "_d_vol": 15.8,
+      "_d_ch5": -0.1,
+      "_d_ch20": 0.8
     }
   ]
 }
