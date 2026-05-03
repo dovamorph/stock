@@ -65,6 +65,7 @@ def fetch_market_signal(tok) -> dict:
         "rsi_14": 50.0, "basis": None, "basis_signal": "조회불가",
     }
     try:
+        reasons = []  # 전체 try 블록에서 공유
         # FDR로 KOSPI/KOSDAQ 지수 (MA60 계산에 충분한 데이터)
         now = datetime.now()
         s   = (now - timedelta(days=120)).strftime("%Y-%m-%d")
