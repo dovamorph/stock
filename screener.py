@@ -21,8 +21,8 @@ APP_KEY    = os.environ.get("KIS_APP_KEY","")
 APP_SECRET = os.environ.get("KIS_APP_SECRET","")
 DISCORD    = os.environ.get("DISCORD_WEBHOOK","")
 BASE       = "https://openapi.koreainvestment.com:9443"
-TOP_N      = 30
-CAND_N     = 400
+TOP_N      = 100
+CAND_N     = 700
 
 ETF_KW = ["ETF","ETN","KODEX","TIGER","KBSTAR","ARIRANG","HANARO","SOL","ACE",
           "RISE","레버리지","인버스","선물","PLUS","TIMEFOLIO"]
