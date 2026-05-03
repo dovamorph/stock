@@ -62,6 +62,7 @@ def fetch_market_signal(tok) -> dict:
         "kospi_close": 0, "ma5": 0, "ma20": 0, "ma60": 0,
         "kospi_ch5": 0, "kospi_ch20": 0, "aligned": "",
         "kosdaq_close": 0, "kosdaq_ch5": 0,
+        "rsi_14": 50.0, "basis": None, "basis_signal": "조회불가",
     }
     try:
         # FDR로 KOSPI/KOSDAQ 지수 (MA60 계산에 충분한 데이터)
@@ -103,6 +104,21 @@ def fetch_market_signal(tok) -> dict:
         ma20  = sum(prices[:20]) / 20
         ma60  = sum(prices[:60]) / 60 if len(prices) >= 60 else sum(prices) / len(prices)
 
+        # RSI 14일 계산 (prices는 최신순)
+        rsi_14 = 50.0  # 기본값
+        if len(prices) >= 15:
+            # 오래된 순으로 정렬해서 계산
+            p_asc = prices[:15][::-1]
+            gains = [max(p_asc[i]-p_asc[i-1], 0) for i in range(1,15)]
+            losses= [max(p_asc[i-1]-p_asc[i], 0) for i in range(1,15)]
+            avg_gain = sum(gains) / 14
+            avg_loss = sum(losses) / 14
+            if avg_loss == 0:
+                rsi_14 = 100.0
+            else:
+                rs = avg_gain / avg_loss
+                rsi_14 = round(100 - (100 / (1 + rs)), 1)
+
         result.update({
             "kospi_close": round(close, 2),
             "ma5":         round(ma5, 2),
@@ -110,7 +126,18 @@ def fetch_market_signal(tok) -> dict:
             "ma60":        round(ma60, 2),
             "kospi_ch5":   round((close - prices[4]) / prices[4] * 100, 2) if len(prices) >= 5 and prices[4] > 0 else 0,
             "kospi_ch20":  round((close - prices[19]) / prices[19] * 100, 2) if len(prices) >= 20 and prices[19] > 0 else 0,
+            "rsi_14":      rsi_14,
         })
+
+        # RSI 신호 반영
+        if rsi_14 > 70:
+            reasons.append(f"RSI {rsi_14:.0f} 과매수(조정주의)")
+        elif rsi_14 < 30:
+            reasons.append(f"RSI {rsi_14:.0f} 과매도(반등가능)")
+        elif rsi_14 >= 50:
+            reasons.append(f"RSI {rsi_14:.0f} 상승모멘텀")
+        else:
+            reasons.append(f"RSI {rsi_14:.0f} 하락모멘텀")
 
         # ── 정배열/역배열 판단 ──
         is_golden   = ma5 > ma20           # 단기 골든크로스
@@ -169,9 +196,48 @@ def fetch_market_signal(tok) -> dict:
 
         result["reason"] = " · ".join(reasons) if reasons else "중립"
 
+        # 선물 베이시스 조회 (KOSPI200 선물)
+        try:
+            # 가장 가까운 분기 만기월 계산 (3/6/9/12월)
+            now_m = datetime.now().month
+            now_y = datetime.now().year
+            exp_months = [3, 6, 9, 12]
+            front_m = next(m for m in exp_months if m >= now_m)
+            front_y = now_y
+            if front_m < now_m:
+                front_y += 1
+            # KIS 선물 종목코드: 101W + 만기연도(2자리) + 만기월(2자리)
+            fut_code = f"101W{str(front_y)[-2:]}{str(front_m).zfill(2)}"
+            res_fut = requests.get(
+                f"{BASE}/uapi/domestic-stock/v1/quotations/inquire-price",
+                headers=H(tok, "FHKIF03010100"),
+                params={"fid_cond_mrkt_div_code":"F","fid_input_iscd":fut_code},
+                timeout=8
+            )
+            fut_data = res_fut.json()
+            if fut_data.get("rt_cd") == "0":
+                fut_price = sf(fut_data.get("output",{}).get("stck_prpr", 0))
+                # KOSPI200 현물 지수 (KOSPI의 약 1/5 수준)
+                kospi200 = close / 5  # 근사값
+                if fut_price > 0:
+                    basis = round(fut_price - kospi200, 2)
+                    result["basis"] = basis
+                    if basis > 1.5:
+                        result["basis_signal"] = f"강세(+{basis:.1f})"
+                    elif basis > 0:
+                        result["basis_signal"] = f"약강세(+{basis:.1f})"
+                    elif basis > -1.5:
+                        result["basis_signal"] = f"약약세({basis:.1f})"
+                    else:
+                        result["basis_signal"] = f"약세({basis:.1f})"
+                    print(f"  선물({fut_code}) {fut_price:.2f} | 베이시스 {basis:+.2f} → {result['basis_signal']}")
+        except Exception as eb:
+            print(f"  선물 베이시스 조회 실패: {eb}")
+
         print(
             f"  KOSPI {close:,.2f} | "
             f"MA5 {ma5:,.2f} MA20 {ma20:,.2f} MA60 {ma60:,.2f} | "
+            f"RSI {rsi_14:.0f} | "
             f"{result['aligned']} → {result['signal']}"
         )
         print(f"  근거: {result['reason']}")
@@ -555,8 +621,8 @@ def send_discord(results, date, recs, market_signal):
         f"→ {final_reason}",
         f"",
         f"🇰🇷 한국: {sig}  [{aligned}]",
-        f"KOSPI {kospi:,.2f} (5일 {ch5:+.1f}%) | MA5 {ma5:,.0f} MA20 {ma20:,.0f} MA60 {ma60:,.0f}",
-        f"근거: {reason}",
+        f"KOSPI {kospi:,.2f} (5일 {ch5:+.1f}%) | RSI {market_signal.get('rsi_14',50):.0f} | 베이시스 {market_signal.get('basis_signal','조회불가')}",
+        f"MA5 {ma5:,.0f} MA20 {ma20:,.0f} MA60 {ma60:,.0f} | 근거: {reason}",
         f"",
         f"🇺🇸 미국: {us_sig}",
         f"S&P500 {sp5:,.2f} (5일 {sp5_ch5:+.1f}%) | NASDAQ {ndx:,.2f} (5일 {ndx_ch5:+.1f}%) | VIX {us.get('vix_close',0):.1f} [{us.get('vix_level','?')}]",
