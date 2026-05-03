@@ -181,6 +181,130 @@ def fetch_market_signal(tok) -> dict:
 
     return result
 
+# ── 미국 시장 시그널 (S&P500 / NASDAQ) ──────────────────────────
+def fetch_us_signal() -> dict:
+    """
+    S&P500, 나스닥 MA5/MA20 분석
+    미장은 한국 전날 마감 데이터 기준
+    """
+    result = {
+        "sp500_close": 0, "sp500_ch5": 0, "sp500_ch20": 0,
+        "sp500_ma5": 0,   "sp500_ma20": 0,
+        "ndx_close": 0,   "ndx_ch5": 0,   "ndx_ch20": 0,
+        "ndx_ma5": 0,     "ndx_ma20": 0,
+        "vix_close": 0,   "vix_level": "데이터없음",
+        "us_signal": "⚖️ 관망", "us_signal_en": "WATCH",
+        "us_reason": "데이터 없음",
+    }
+    try:
+        from datetime import datetime, timedelta
+        now = datetime.now()
+        s   = (now - timedelta(days=60)).strftime("%Y-%m-%d")
+        e   = now.strftime("%Y-%m-%d")
+
+        scores = []
+        reasons = []
+
+        for ticker, key in [("^GSPC","sp500"), ("^IXIC","ndx")]:
+            try:
+                df = yf.download(ticker, start=s, end=e, auto_adjust=True, progress=False)
+                if df is None or len(df) < 5:
+                    continue
+                prices = list(df["Close"].dropna())[::-1]  # 최신순
+                close = float(prices[0])
+                ma5   = sum(float(p) for p in prices[:5])  / 5
+                ma20  = sum(float(p) for p in prices[:20]) / 20 if len(prices)>=20 else ma5
+                ch5   = round((float(prices[0])-float(prices[4]))/float(prices[4])*100, 2) if len(prices)>=5 else 0
+                ch20  = round((float(prices[0])-float(prices[19]))/float(prices[19])*100, 2) if len(prices)>=20 else 0
+
+                result[f"{key}_close"] = round(close, 2)
+                result[f"{key}_ma5"]   = round(ma5, 2)
+                result[f"{key}_ma20"]  = round(ma20, 2)
+                result[f"{key}_ch5"]   = ch5
+                result[f"{key}_ch20"]  = ch20
+
+                # 개별 시그널
+                above_ma5  = close > ma5
+                golden     = ma5 > ma20
+                label = "SP500" if key=="sp500" else "NASDAQ"
+
+                if above_ma5 and golden:
+                    scores.append(1)
+                    reasons.append(f"{label} 상승추세")
+                elif not above_ma5 and not golden:
+                    scores.append(-1)
+                    reasons.append(f"{label} 하락추세")
+                else:
+                    scores.append(0)
+                    reasons.append(f"{label} 혼조")
+
+            except Exception as e:
+                print(f"  {ticker} 조회 오류: {e}")
+
+        # VIX 공포지수 조회
+        vix_close = 0; vix_level = "보통"; vix_score = 0
+        try:
+            df_vix = yf.download("^VIX", start=s, end=e, auto_adjust=True, progress=False)
+            if df_vix is not None and len(df_vix) >= 1:
+                vix_close = round(float(list(df_vix["Close"].dropna())[-1]), 2)
+                # VIX 해석
+                # < 15: 과도한 낙관 (역발상 주의)
+                # 15~20: 안정적 (정상)
+                # 20~25: 불안감 상승
+                # 25~30: 공포 (변동성 높음)
+                # > 30: 극도의 공포 (역발상 매수 기회 가능)
+                if vix_close < 15:
+                    vix_level = "과열낙관"; vix_score = 0   # 너무 낙관적 → 주의
+                    reasons.append(f"VIX {vix_close:.1f} 과열낙관 (조심)")
+                elif vix_close < 20:
+                    vix_level = "안정"; vix_score = 1       # 정상 → 긍정적
+                    reasons.append(f"VIX {vix_close:.1f} 안정")
+                    scores.append(1)
+                elif vix_close < 25:
+                    vix_level = "불안"; vix_score = -1      # 불안 → 부정적
+                    reasons.append(f"VIX {vix_close:.1f} 불안")
+                    scores.append(-1)
+                elif vix_close < 35:
+                    vix_level = "공포"; vix_score = -1      # 공포 → 신중
+                    reasons.append(f"VIX {vix_close:.1f} 공포구간")
+                    scores.append(-1)
+                else:
+                    vix_level = "극공포"; vix_score = 0    # 극공포 → 역발상 가능
+                    reasons.append(f"VIX {vix_close:.1f} 극공포 (역발상주의)")
+        except Exception as e:
+            print(f"  VIX 조회 오류: {e}")
+
+        result["vix_close"] = vix_close
+        result["vix_level"] = vix_level
+
+        # 종합 시그널
+        total = sum(scores)
+        if total >= 2:
+            result["us_signal"]    = "📈 상승장"
+            result["us_signal_en"] = "BUY"
+        elif total <= -2:
+            result["us_signal"]    = "📉 하락장"
+            result["us_signal_en"] = "SELL"
+        elif total == 1:
+            result["us_signal"]    = "📈 약한 상승"
+            result["us_signal_en"] = "BUY"
+        elif total == -1:
+            result["us_signal"]    = "📉 약한 하락"
+            result["us_signal_en"] = "SELL"
+        else:
+            result["us_signal"]    = "⚖️ 혼조"
+            result["us_signal_en"] = "WATCH"
+
+        result["us_reason"] = " · ".join(reasons) if reasons else "데이터 없음"
+        print(f"  S&P500 {result['sp500_close']:,.2f} (5일{result['sp500_ch5']:+.1f}%) | "
+              f"NASDAQ {result['ndx_close']:,.2f} (5일{result['ndx_ch5']:+.1f}%) | "
+              f"VIX {vix_close:.1f} [{vix_level}] → {result['us_signal']}")
+
+    except Exception as e:
+        print(f"  미국 시장 오류: {e}")
+
+    return result
+
 # ── 단타/장투 라벨 ───────────────────────────────────────────────
 def get_trade_label(d: dict) -> dict:
     """
@@ -414,15 +538,26 @@ def send_discord(results, date, recs, market_signal):
     ma5      = market_signal.get("ma5",0)
     ma20     = market_signal.get("ma20",0)
     ma60     = market_signal.get("ma60",0)
+    final_sig = market_signal.get("final_signal","⚖️ 관망")
+    final_reason = market_signal.get("final_reason","")
+    us = market_signal.get("us",{})
+    sp5  = us.get("sp500_close",0); sp5_ch5 = us.get("sp500_ch5",0)
+    ndx  = us.get("ndx_close",0);  ndx_ch5 = us.get("ndx_ch5",0)
+    us_sig = us.get("us_signal","⚖️ 혼조")
 
     lines=[
         f"📊 **StockPilot KR — {dt}** (KIS 실시간)",
         f"",
         f"{'─'*30}",
-        f"🏦 **시장 시그널: {sig}**  [{aligned}]",
-        f"KOSPI {kospi:,.2f} (5일 {ch5:+.1f}%)",
-        f"MA5 {ma5:,.0f} · MA20 {ma20:,.0f} · MA60 {ma60:,.0f}",
+        f"🌐 **최종 시그널: {final_sig}**",
+        f"→ {final_reason}",
+        f"",
+        f"🇰🇷 한국: {sig}  [{aligned}]",
+        f"KOSPI {kospi:,.2f} (5일 {ch5:+.1f}%) | MA5 {ma5:,.0f} MA20 {ma20:,.0f} MA60 {ma60:,.0f}",
         f"근거: {reason}",
+        f"",
+        f"🇺🇸 미국: {us_sig}",
+        f"S&P500 {sp5:,.2f} (5일 {sp5_ch5:+.1f}%) | NASDAQ {ndx:,.2f} (5일 {ndx_ch5:+.1f}%) | VIX {us.get('vix_close',0):.1f} [{us.get('vix_level','?')}]",
         f"{'─'*30}",
         f"",
         f"거래대금 상위{TOP_N} | ROE≥15% · PER≤15배 · EPS≥1 · EPS상승",
@@ -483,6 +618,35 @@ def main():
     # 시장 시그널
     print("\n[시장] KOSPI MA5/MA20/MA60 분석 중...")
     market_signal = fetch_market_signal(tok)
+
+    print("\n[미장] S&P500 / NASDAQ 분석 중...")
+    us_signal = fetch_us_signal()
+    market_signal["us"] = us_signal
+
+    # 한국+미국 종합 최종 시그널
+    kr_en = market_signal.get("signal_en","WATCH")
+    us_en = us_signal.get("us_signal_en","WATCH")
+    if kr_en=="BUY" and us_en=="BUY":
+        market_signal["final_signal"]    = "📈 강한 매수"
+        market_signal["final_signal_en"] = "STRONG_BUY"
+        market_signal["final_reason"]    = "한국 + 미국 동시 상승추세"
+    elif kr_en=="SELL" and us_en=="SELL":
+        market_signal["final_signal"]    = "📉 강한 매도"
+        market_signal["final_signal_en"] = "STRONG_SELL"
+        market_signal["final_reason"]    = "한국 + 미국 동시 하락추세"
+    elif kr_en=="BUY" or us_en=="BUY":
+        market_signal["final_signal"]    = "📈 매수 우위"
+        market_signal["final_signal_en"] = "BUY"
+        market_signal["final_reason"]    = "한국/미국 중 상승추세"
+    elif kr_en=="SELL" or us_en=="SELL":
+        market_signal["final_signal"]    = "📉 매도 우위"
+        market_signal["final_signal_en"] = "SELL"
+        market_signal["final_reason"]    = "한국/미국 중 하락추세"
+    else:
+        market_signal["final_signal"]    = "⚖️ 관망"
+        market_signal["final_signal_en"] = "WATCH"
+        market_signal["final_reason"]    = "한국 + 미국 모두 혼조"
+    print(f"  최종 시그널: {market_signal['final_signal']} ({market_signal['final_reason']})")
 
     candidates=load_candidates()
     if not candidates: print("❌ 후보 로드 실패"); return
