@@ -542,12 +542,14 @@ def check_dividend(ticker, market):
 
 # ── 5단계: EPS 추세 ───────────────────────────────────────────────
 def fetch_eps_trend(tok, ticker, cur_eps):
-    r={"eps_trend":"데이터없음","eps_growth":0.}
+    r={"eps_trend":"데이터없음","eps_growth":0.,"debt_ratio":None}
     try:
         res=requests.get(f"{BASE}/uapi/domestic-stock/v1/finance/financial-ratio",
             headers=H(tok,"FHKST66430300"),timeout=10,
             params={"fid_cond_mrkt_div_code":"J","fid_input_iscd":ticker,"fid_div_cls_code":"1"})
         items=res.json().get("output",[])
+
+        # EPS 추세
         ev=[sf(x.get("eps")) for x in items[:3] if sf(x.get("eps"))!=0]
         if len(ev)>=2:
             growing=all(ev[i]>=ev[i+1] for i in range(len(ev)-1))
@@ -557,6 +559,14 @@ def fetch_eps_trend(tok, ticker, cur_eps):
             elif ev[0]>=1: r["eps_trend"]="유지"
             else: r["eps_trend"]="부진"
         else: r["eps_trend"]="유지" if cur_eps>=1 else "부진"
+
+        # 부채비율 (lblt_rate) — 최근 연간 기준
+        for item in items[:1]:
+            v = sf(item.get("lblt_rate", 0))
+            if v > 0:
+                r["debt_ratio"] = round(v, 1)
+                break
+
     except: r["eps_trend"]="유지" if cur_eps>=1 else "부진"
     return r
 
@@ -600,14 +610,20 @@ def fetch_ch20(tok, ticker):
 def judge(d):
     roe=d.get("roe",0) or 0; per=d.get("per",0) or 0
     eps=d.get("eps",0) or 0; eps_trend=d.get("eps_trend","")
-    c1=roe>=15; c2=0<per<=15; c3=eps>=1; c4=eps_trend=="상승"
-    score=sum([c1,c2,c3,c4])
-    if score==4: grade="A"
-    elif score==3: grade="B"
-    elif score==2: grade="C"
-    else: grade="D"
-    return {"roe_ok":c1,"per_ok":c2,"eps_ok":c3,"eps_up":c4,
-            "score":score,"grade":grade,"recommended":score>=3}
+    debt=d.get("debt_ratio",None)
+    c1=roe>=15                      # ROE ≥ 15%
+    c2=0<per<=15                    # PER ≤ 15배 (흑자)
+    c3=eps>=1                       # EPS ≥ 1원
+    c4=eps_trend=="상승"             # EPS 상승추세
+    c5=debt is not None and debt<=200  # 부채비율 ≤ 200%
+    score=sum([c1,c2,c3,c4,c5])
+    if score==5: grade="A"
+    elif score==4: grade="B"
+    elif score==3: grade="C"
+    elif score==2: grade="D"
+    else: grade="F"
+    return {"roe_ok":c1,"per_ok":c2,"eps_ok":c3,"eps_up":c4,"debt_ok":c5,
+            "score":score,"grade":grade,"recommended":score>=4}
 
 # ── Discord ───────────────────────────────────────────────────────
 def send_discord(results, date, recs, market_signal):
@@ -694,7 +710,7 @@ def main():
     now_kst = now_utc + timedelta(hours=9)
     date = now_kst.strftime("%Y%m%d")
     print(f"  기준일: {date} ({now_kst.strftime('%H:%M')} KST)")
-    print(f"  등급: ROE≥15%(A) PER≤15배(A) EPS≥1(A) EPS상승(A) → 3개이상=추천")
+    print(f"  등급: ROE≥15% PER≤15배 EPS≥1 EPS상승 부채비율≤200% → 5개 기준 / 4개이상=추천")
     print(f"  단타: 거래대금추세≥30% + 5일 5~20% + 20일<50% + B등급이상")
     print(f"  장투: ROE≥15% + EPS상승 + PER≤20배 + (PBR≤1.5 or 배당주)")
 
@@ -783,12 +799,15 @@ def main():
 
             div_str = "  💰" if is_div else ""
             tl_str  = f"  {tl['trade_label']}" if tl['trade_label']!="–" else ""
+            debt_r = data.get("debt_ratio",None)
+            debt_str = f"  부채:{debt_r:.0f}%{'✅' if f['debt_ok'] else '❌'}" if debt_r is not None else "  부채:-"
             print(
-                f"{ge_map.get(f['grade'],'⚪')}{f['grade']}등급({f['score']}/4)"
+                f"{ge_map.get(f['grade'],'⚪')}{f['grade']}등급({f['score']}/5)"
                 f"{tl_str}"
                 f"  ROE:{t.get('roe',0):.1f}%{'✅' if f['roe_ok'] else '❌'}"
                 f"  PER:{t.get('per',0):.1f}{'✅' if f['per_ok'] else '❌'}"
                 f"  EPS:{t.get('eps',0):,.0f}({eps_tr['eps_trend']}){'✅' if f['eps_ok'] and f['eps_up'] else '❌'}"
+                f"{debt_str}"
                 f"  5일:{price.get('ch5',0):+.1f}%"
                 f"  20일:{price.get('ch20',0):+.1f}%"
                 f"{div_str}"
