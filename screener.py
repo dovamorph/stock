@@ -554,10 +554,10 @@ def fetch_eps_trend(tok, ticker, cur_eps):
 
 # ── 6단계: 20일 등락 + 5일 등락 ──────────────────────────────────
 def fetch_ch20(tok, ticker):
-    r={"ch20":0.,"ch5":0.,"vol_trend":0.}
+    r={"ch20":0.,"ch5":0.,"vol_trend":0.,"rsi":50.0}
     try:
         now=datetime.now()
-        s=(now-timedelta(days=45)).strftime("%Y%m%d"); e=now.strftime("%Y%m%d")
+        s=(now-timedelta(days=60)).strftime("%Y%m%d"); e=now.strftime("%Y%m%d")
         res=requests.get(f"{BASE}/uapi/domestic-stock/v1/quotations/inquire-daily-price",
             headers=H(tok,"FHKST01010400"),timeout=10,
             params={"fid_cond_mrkt_div_code":"J","fid_input_iscd":ticker,
@@ -574,6 +574,17 @@ def fetch_ch20(tok, ticker):
         if len(vols)>=20:
             avg5=sum(vols[:5])/5; avgA=sum(vols[:20])/20
             r["vol_trend"]=round((avg5-avgA)/avgA*100,1) if avgA>0 else 0.
+        # RSI(14) 계산 — prices는 최신순이므로 역순으로
+        if len(prices)>=15:
+            p_asc=prices[:15][::-1]  # 오래된순 15개
+            gains=[max(p_asc[i]-p_asc[i-1],0) for i in range(1,15)]
+            losses=[max(p_asc[i-1]-p_asc[i],0) for i in range(1,15)]
+            avg_gain=sum(gains)/14; avg_loss=sum(losses)/14
+            if avg_loss==0:
+                r["rsi"]=100.0
+            else:
+                rs=avg_gain/avg_loss
+                r["rsi"]=round(100-(100/(1+rs)),1)
     except: pass
     return r
 
