@@ -1,6 +1,6 @@
 {
-  "date": "20260501",
-  "generated_at": "2026-05-01T20:39:20.769795",
+  "date": "20260503",
+  "generated_at": "2026-05-03T15:20:51.855219",
   "total": 30,
   "market_signal": {
     "signal": "⚖️ 관망",
@@ -14,7 +14,27 @@
     "kospi_ch20": 22.72,
     "aligned": "혼조",
     "kosdaq_close": 1192.35,
-    "kosdaq_ch5": -0.95
+    "kosdaq_ch5": -0.95,
+    "us": {
+      "sp500_close": 0,
+      "sp500_ch5": 0,
+      "sp500_ch20": 0,
+      "sp500_ma5": 0,
+      "sp500_ma20": 0,
+      "ndx_close": 0,
+      "ndx_ch5": 0,
+      "ndx_ch20": 0,
+      "ndx_ma5": 0,
+      "ndx_ma20": 0,
+      "vix_close": 0,
+      "vix_level": "보통",
+      "us_signal": "⚖️ 혼조",
+      "us_signal_en": "WATCH",
+      "us_reason": "데이터 없음"
+    },
+    "final_signal": "⚖️ 관망",
+    "final_signal_en": "WATCH",
+    "final_reason": "한국 + 미국 모두 혼조"
   },
   "results": [
     {
