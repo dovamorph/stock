@@ -197,9 +197,8 @@ def fetch_us_signal() -> dict:
         "us_reason": "데이터 없음",
     }
     try:
-        from datetime import datetime, timedelta
         now = datetime.now()
-        s   = (now - timedelta(days=60)).strftime("%Y-%m-%d")
+        s   = (now - timedelta(days=90)).strftime("%Y-%m-%d")
         e   = now.strftime("%Y-%m-%d")
 
         scores = []
@@ -207,15 +206,17 @@ def fetch_us_signal() -> dict:
 
         for ticker, key in [("^GSPC","sp500"), ("^IXIC","ndx")]:
             try:
-                df = yf.download(ticker, start=s, end=e, auto_adjust=True, progress=False)
+                # yf.download 대신 Ticker.history 사용 (^기호 파싱 오류 회피)
+                t_obj = yf.Ticker(ticker)
+                df = t_obj.history(start=s, end=e)
                 if df is None or len(df) < 5:
                     continue
-                prices = list(df["Close"].dropna())[::-1]  # 최신순
-                close = float(prices[0])
-                ma5   = sum(float(p) for p in prices[:5])  / 5
-                ma20  = sum(float(p) for p in prices[:20]) / 20 if len(prices)>=20 else ma5
-                ch5   = round((float(prices[0])-float(prices[4]))/float(prices[4])*100, 2) if len(prices)>=5 else 0
-                ch20  = round((float(prices[0])-float(prices[19]))/float(prices[19])*100, 2) if len(prices)>=20 else 0
+                prices = list(df["Close"].dropna())  # 오래된순
+                close = float(prices[-1])
+                ma5   = sum(float(p) for p in prices[-5:])  / 5
+                ma20  = sum(float(p) for p in prices[-20:]) / 20 if len(prices)>=20 else ma5
+                ch5   = round((float(prices[-1])-float(prices[-5]))/float(prices[-5])*100, 2) if len(prices)>=5 else 0
+                ch20  = round((float(prices[-1])-float(prices[-20]))/float(prices[-20])*100, 2) if len(prices)>=20 else 0
 
                 result[f"{key}_close"] = round(close, 2)
                 result[f"{key}_ma5"]   = round(ma5, 2)
@@ -244,7 +245,8 @@ def fetch_us_signal() -> dict:
         # VIX 공포지수 조회
         vix_close = 0; vix_level = "보통"; vix_score = 0
         try:
-            df_vix = yf.download("^VIX", start=s, end=e, auto_adjust=True, progress=False)
+            vix_obj = yf.Ticker("^VIX")
+            df_vix = vix_obj.history(start=s, end=e)
             if df_vix is not None and len(df_vix) >= 1:
                 vix_close = round(float(list(df_vix["Close"].dropna())[-1]), 2)
                 # VIX 해석
