@@ -607,15 +607,56 @@ def fetch_ch20(tok, ticker):
     return r
 
 # ── 추천 등급 판단 ─────────────────────────────────────────────────
+# 금융업종 티커 목록
+# 은행/증권/보험/카드사는 고객 예금·보험료가 부채로 잡혀
+# 구조적으로 부채비율이 1,000% 이상 → 부채비율 기준 적용 시 왜곡 발생
+# 따라서 금융업종은 부채비율 조건 면제
+FINANCE_TICKERS = {
+    # 은행지주
+    "105560",  # KB금융
+    "055550",  # 신한지주
+    "086790",  # 하나금융지주
+    "316140",  # 우리금융지주
+    "138930",  # BNK금융지주
+    "139130",  # DGB금융지주
+    "175330",  # JB금융지주
+    # 증권
+    "039490",  # 키움증권
+    "006800",  # 미래에셋증권
+    "030200",  # KT
+    "001510",  # SK증권
+    "071050",  # 한국금융지주
+    "003540",  # 대신증권
+    "016360",  # 삼성증권
+    # 보험
+    "000810",  # 삼성화재
+    "032830",  # 삼성생명
+    "088350",  # 한화생명
+    "005830",  # DB손해보험
+    # 카드/캐피탈
+    "029780",  # 삼성카드
+}
+
 def judge(d):
     roe=d.get("roe",0) or 0; per=d.get("per",0) or 0
     eps=d.get("eps",0) or 0; eps_trend=d.get("eps_trend","")
     debt=d.get("debt_ratio",None)
+    ticker=d.get("ticker","")
+
     c1=roe>=15                      # ROE ≥ 15%
     c2=0<per<=15                    # PER ≤ 15배 (흑자)
     c3=eps>=1                       # EPS ≥ 1원
     c4=eps_trend=="상승"             # EPS 상승추세
-    c5=debt is not None and debt<=200  # 부채비율 ≤ 200%
+
+    # 부채비율 ≤ 200% (금융업종 면제)
+    # 금융사는 고객 예금·보험료가 부채에 포함되어 구조적으로 1,000% 초과
+    # 이는 실제 재무 위험이 아니므로 부채비율 기준 적용 제외
+    is_finance = ticker in FINANCE_TICKERS
+    if is_finance:
+        c5 = True   # 금융업종 면제
+    else:
+        c5 = debt is not None and debt <= 200
+
     score=sum([c1,c2,c3,c4,c5])
     if score==5: grade="A"
     elif score==4: grade="B"
@@ -623,6 +664,7 @@ def judge(d):
     elif score==2: grade="D"
     else: grade="F"
     return {"roe_ok":c1,"per_ok":c2,"eps_ok":c3,"eps_up":c4,"debt_ok":c5,
+            "is_finance":is_finance,
             "score":score,"grade":grade,"recommended":score>=4}
 
 # ── Discord ───────────────────────────────────────────────────────
