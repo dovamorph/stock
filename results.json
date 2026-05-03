@@ -1,6 +1,6 @@
 {
   "date": "20260503",
-  "generated_at": "2026-05-03T15:56:33.849482",
+  "generated_at": "2026-05-03T16:02:37.640117",
   "total": 30,
   "market_signal": {
     "signal": "⚖️ 관망",
@@ -18,6 +18,7 @@
     "rsi_14": 83.8,
     "basis": null,
     "basis_signal": "조회불가",
+    "kr_score": -1,
     "us": {
       "sp500_close": 7230.12,
       "sp500_ch5": 0.78,
@@ -37,7 +38,8 @@
     },
     "final_signal": "📈 매수 우위",
     "final_signal_en": "BUY",
-    "final_reason": "한국/미국 중 상승추세"
+    "final_reason": "한국 혼조 · 미국 상승장",
+    "total_score": 2
   },
   "results": [
     {
