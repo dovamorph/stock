@@ -775,10 +775,8 @@ def main():
 
             data={**t,**eps_tr,**price,"is_dividend":is_div}
             f=judge(data)
-            tl=get_trade_label(data)
             data.update({
                 "filters":f,"grade":f["grade"],"score":f["score"],"recommended":f["recommended"],
-                **tl,
             })
             results.append(data)
 
