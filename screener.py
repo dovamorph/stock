@@ -381,71 +381,6 @@ def fetch_us_signal() -> dict:
 
     return result
 
-# ── 단타/장투 라벨 ───────────────────────────────────────────────
-def get_trade_label(d: dict) -> dict:
-    """
-    ⚡ 단타 (스윙 1~7일) — 추가 API 호출 없이 현재 데이터 기반:
-      - 5일 등락 5~20%      : 추세 형성 중, 과열 아님 (3%미만=신호약, 20%초과=추격위험)
-      - 거래대금추세 ≥ 30%   : 거래 급증으로 시장 관심 확인 (엄격)
-      - 20일 등락 < 25%     : 아직 과열 아님 (25% 초과는 이미 많이 오름)
-      - 등급 B 이상 (score≥3): 펀더멘털 최소 확인, D/C등급 제외
-
-    💎 장투 (1년+) — 가치투자 엄격 기준:
-      - ROE ≥ 15%           : 수익성 우량
-      - EPS ≥ 1 + 상승추세   : 실적 성장 확인
-      - PER ≤ 20배          : 적정 밸류에이션 (엄격)
-      - PBR ≤ 1.5 OR 배당주  : 가치주 or 배당주 (엄격)
-    """
-    ch20      = d.get("ch20", 0) or 0
-    ch5       = d.get("ch5", 0) or 0
-    vol_trend = d.get("vol_trend", 0) or 0
-    roe       = d.get("roe", 0) or 0
-    per       = d.get("per", 0) or 0
-    pbr       = d.get("pbr", 0) or 0
-    eps       = d.get("eps", 0) or 0
-    eps_trend = d.get("eps_trend", "")
-    is_div    = d.get("is_dividend", False)
-    score     = d.get("score", 0) or 0
-
-    # ── 단타 조건 ──
-    # 현재 불장(20일 상승 폭 큼)을 감안해 20일 기준 30%로 완화
-    cond_ch5   = 5 <= ch5 <= 20       # 5일 5~20% (추세 형성 중, 과열 전)
-    cond_vol   = vol_trend >= 20      # 거래 급증 20% 이상
-    cond_ch20  = ch20 < 50            # 20일 50% 미만 (현 강세장 기준 과열선)
-    cond_grade = score >= 3           # B등급 이상 (D/C 제외)
-    is_danta   = cond_ch5 and cond_vol and cond_ch20 and cond_grade
-
-    # ── 장투 조건 ──
-    # 현재 한국 시장 PER 수준 감안해 25배로 완화, 나머지는 엄격 유지
-    cond_roe   = roe >= 15                          # ROE 15% 이상
-    cond_eps   = eps_trend == "상승" and eps >= 1   # EPS 상승 + 흑자
-    cond_per   = 0 < per <= 20                      # PER 20배 이하 (엄격)
-    cond_value = (0 < pbr <= 1.5) or is_div         # PBR 1.5 이하 or 배당주
-    is_jangtu  = cond_roe and cond_eps and cond_per and cond_value
-
-    if is_danta and is_jangtu:
-        label = "⚡💎"
-        label_text = "단타+장투"
-    elif is_danta:
-        label = "⚡"
-        label_text = "단타"
-    elif is_jangtu:
-        label = "💎"
-        label_text = "장투"
-    else:
-        label = "–"
-        label_text = ""
-
-    return {
-        "trade_label":      label,
-        "trade_label_text": label_text,
-        "is_danta":         is_danta,
-        "is_jangtu":        is_jangtu,
-        # 디버그용
-        "_d_vol":   round(vol_trend, 1),
-        "_d_ch5":   round(ch5, 1),
-        "_d_ch20":  round(ch20, 1),
-    }
 
 # ── 1단계: FDR 시총 상위 후보 ────────────────────────────────────
 def load_candidates():
@@ -623,11 +558,19 @@ FINANCE_TICKERS = {
     # 증권
     "039490",  # 키움증권
     "006800",  # 미래에셋증권
-    "030200",  # KT
     "001510",  # SK증권
     "071050",  # 한국금융지주
     "003540",  # 대신증권
     "016360",  # 삼성증권
+    "030200",  # KB증권
+    "005940",  # NH투자증권
+    "078020",  # 이베스트투자증권
+    "008560",  # 메리츠증권
+    "001290",  # 상상인증권
+    "023150",  # MBK파트너스
+    "007770",  # 에스엘
+    "011370",  # 교보증권
+    "012510",  # 더존비즈온
     # 보험
     "000810",  # 삼성화재
     "032830",  # 삼성생명
@@ -845,7 +788,6 @@ def main():
             debt_str = f"  부채:{debt_r:.0f}%{'✅' if f['debt_ok'] else '❌'}" if debt_r is not None else "  부채:-"
             print(
                 f"{ge_map.get(f['grade'],'⚪')}{f['grade']}등급({f['score']}/5)"
-                f"{tl_str}"
                 f"  ROE:{t.get('roe',0):.1f}%{'✅' if f['roe_ok'] else '❌'}"
                 f"  PER:{t.get('per',0):.1f}{'✅' if f['per_ok'] else '❌'}"
                 f"  EPS:{t.get('eps',0):,.0f}({eps_tr['eps_trend']}){'✅' if f['eps_ok'] and f['eps_up'] else '❌'}"
