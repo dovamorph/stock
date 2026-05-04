@@ -2,8 +2,6 @@
 StockPilot KR — KIS OpenAPI 스크리닝
 지표: 거래대금 / ROE / PER / PBR / EPS / EPS추세 / 배당여부 / 20일등락
 시장 시그널: KOSPI MA5/MA20/MA60 정배열/역배열 기반
-단타 기준 (1~7일): 거래대금추세≥20% + 5일등락 3~15% + 20일등락<30%
-장투 기준: ROE≥15% + EPS상승 + PER≤25배 + (PBR≤2.0 OR 배당주)
 등급: A(4/4) B(3/4) C(2/4) D(1이하)
 """
 import os, json, time, traceback
@@ -694,8 +692,6 @@ def main():
     date = now_kst.strftime("%Y%m%d")
     print(f"  기준일: {date} ({now_kst.strftime('%H:%M')} KST)")
     print(f"  등급: ROE≥15% PER≤15배 EPS≥1 EPS상승 부채비율≤200% → 5개 기준 / 4개이상=추천")
-    print(f"  단타: 거래대금추세≥30% + 5일 5~20% + 20일<50% + B등급이상")
-    print(f"  장투: ROE≥15% + EPS상승 + PER≤20배 + (PBR≤1.5 or 배당주)")
 
     print("\n[0] KIS 토큰 발급 중...")
     try: tok=get_token()
