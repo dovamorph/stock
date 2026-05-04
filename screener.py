@@ -657,9 +657,7 @@ def send_discord(results, date, recs, market_signal):
         star="⭐ " if r.get("recommended") else ""
         eps_t=r.get("eps_trend","데이터없음"); eps_g=r.get("eps_growth",0)
         div_str="  💰" if r.get("is_dividend") else ""
-        tl=r.get("trade_label","–")
-        tl_str=f" {tl}" if tl!="–" else ""
-        lines.append(f"{ge.get(g,'⚪')} {star}**{r['name']}** ({r['market']}){tl_str} — {g}등급{div_str}")
+        lines.append(f"{ge.get(g,'⚪')} {star}**{r['name']}** ({r['market']}) — {g}등급{div_str}")
         lines.append(f"  ROE {r.get('roe',0):.1f}%{'✅' if f.get('roe_ok') else '❌'}"
                      f"  PER {r.get('per',0):.1f}배{'✅' if f.get('per_ok') else '❌'}"
                      f"  PBR {r.get('pbr',0):.2f}")
@@ -781,7 +779,6 @@ def main():
             results.append(data)
 
             div_str = "  💰" if is_div else ""
-            tl_str  = f"  {tl['trade_label']}" if tl['trade_label']!="–" else ""
             debt_r = data.get("debt_ratio",None)
             debt_str = f"  부채:{debt_r:.0f}%{'✅' if f['debt_ok'] else '❌'}" if debt_r is not None else "  부채:-"
             print(
@@ -803,8 +800,7 @@ def main():
     print(f"  시장: {market_signal['signal']} | {market_signal['aligned']} | {market_signal['reason']}")
     print(f"  분석:{len(results)}종목  추천(A·B):{len(recs)}종목")
     for r in recs:
-        tl=r.get("trade_label","–")
-        print(f"  {ge_map.get(r['grade'],'⚪')}{r['grade']}등급 {tl} {r['name']} ({r['market']})"
+        print(f"  {ge_map.get(r['grade'],'⚪')}{r['grade']}등급 – {r['name']} ({r['market']})"
               f"  ROE {r.get('roe',0):.1f}%  PER {r.get('per',0):.1f}배"
               f"  EPS {r.get('eps',0):,.0f}원({r.get('eps_trend','?')})"
               f"{'  💰' if r.get('is_dividend') else ''}")
