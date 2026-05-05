@@ -1,6 +1,6 @@
 {
-  "date": "20260504",
-  "generated_at": "2026-05-04T21:24:36.169071",
+  "date": "20260505",
+  "generated_at": "2026-05-05T11:24:06.950258",
   "total": 40,
   "market_signal": {
     "signal": "⚖️ 관망",
@@ -20,21 +20,21 @@
     "basis_signal": "조회불가",
     "kr_score": 2,
     "us": {
-      "sp500_close": 7230.12,
-      "sp500_ch5": 0.78,
-      "sp500_ch20": 9.35,
-      "sp500_ma5": 7177.56,
-      "sp500_ma20": 7008.46,
-      "ndx_close": 25114.44,
-      "ndx_ch5": 0.91,
-      "ndx_ch20": 14.18,
-      "ndx_ma5": 24846.18,
-      "ndx_ma20": 23930.62,
-      "vix_close": 16.99,
+      "sp500_close": 7200.75,
+      "sp500_ch5": 0.87,
+      "sp500_ch20": 8.82,
+      "sp500_ma5": 7182.93,
+      "sp500_ma20": 7037.91,
+      "ndx_close": 25067.8,
+      "ndx_ch5": 1.64,
+      "ndx_ch20": 13.85,
+      "ndx_ma5": 24882.32,
+      "ndx_ma20": 24084.19,
+      "vix_close": 18.29,
       "vix_level": "안정",
       "us_signal": "📈 상승장",
       "us_signal_en": "BUY",
-      "us_reason": "SP500 상승추세 · NASDAQ 상승추세 · VIX 17.0 안정"
+      "us_reason": "SP500 상승추세 · NASDAQ 상승추세 · VIX 18.3 안정"
     },
     "final_signal": "📈 강한 매수",
     "final_signal_en": "STRONG_BUY",
@@ -1199,6 +1199,41 @@
     },
     {
       "rank": 34,
+      "ticker": "490470",
+      "name": "세미파이브",
+      "market": "KOSDAQ",
+      "tvol": 2412,
+      "per": -24.67,
+      "pbr": 7.49,
+      "eps": -1978.0,
+      "bps": 6513.0,
+      "roe": -30.4,
+      "close": 48800.0,
+      "eps_trend": "부진",
+      "eps_growth": 0.0,
+      "debt_ratio": 40.2,
+      "ch20": 100.8,
+      "ch5": 29.8,
+      "vol_trend": 7.7,
+      "rsi": 73.4,
+      "is_dividend": false,
+      "filters": {
+        "roe_ok": false,
+        "per_ok": false,
+        "eps_ok": false,
+        "eps_up": false,
+        "debt_ok": true,
+        "is_finance": false,
+        "score": 1,
+        "grade": "F",
+        "recommended": false
+      },
+      "grade": "F",
+      "score": 1,
+      "recommended": false
+    },
+    {
+      "rank": 35,
       "ticker": "027360",
       "name": "아주IB투자",
       "market": "KOSDAQ",
@@ -1233,7 +1268,7 @@
       "recommended": false
     },
     {
-      "rank": 35,
+      "rank": 36,
       "ticker": "033100",
       "name": "제룡전기",
       "market": "KOSDAQ",
@@ -1268,7 +1303,7 @@
       "recommended": false
     },
     {
-      "rank": 36,
+      "rank": 37,
       "ticker": "105560",
       "name": "KB금융",
       "market": "KOSPI",
@@ -1303,7 +1338,7 @@
       "recommended": true
     },
     {
-      "rank": 37,
+      "rank": 38,
       "ticker": "066570",
       "name": "LG전자",
       "market": "KOSPI",
@@ -1338,7 +1373,7 @@
       "recommended": false
     },
     {
-      "rank": 38,
+      "rank": 39,
       "ticker": "066970",
       "name": "엘앤에프",
       "market": "KOSPI",
@@ -1373,7 +1408,7 @@
       "recommended": false
     },
     {
-      "rank": 39,
+      "rank": 40,
       "ticker": "042660",
       "name": "한화오션",
       "market": "KOSPI",
@@ -1398,41 +1433,6 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": false,
-        "is_finance": false,
-        "score": 3,
-        "grade": "C",
-        "recommended": false
-      },
-      "grade": "C",
-      "score": 3,
-      "recommended": false
-    },
-    {
-      "rank": 40,
-      "ticker": "028260",
-      "name": "삼성물산",
-      "market": "KOSPI",
-      "tvol": 2001,
-      "per": 22.59,
-      "pbr": 1.05,
-      "eps": 14165.0,
-      "bps": 305019.0,
-      "roe": 4.6,
-      "close": 320000.0,
-      "eps_trend": "상승",
-      "eps_growth": 47.9,
-      "debt_ratio": 50.5,
-      "ch20": 18.7,
-      "ch5": 2.6,
-      "vol_trend": 2.7,
-      "rsi": 66.0,
-      "is_dividend": true,
-      "filters": {
-        "roe_ok": false,
-        "per_ok": false,
-        "eps_ok": true,
-        "eps_up": true,
-        "debt_ok": true,
         "is_finance": false,
         "score": 3,
         "grade": "C",
@@ -1795,7 +1795,7 @@
       "recommended": true
     },
     {
-      "rank": 36,
+      "rank": 37,
       "ticker": "105560",
       "name": "KB금융",
       "market": "KOSPI",
