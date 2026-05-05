@@ -1,6 +1,6 @@
 {
   "date": "20260505",
-  "generated_at": "2026-05-05T18:58:25.067620",
+  "generated_at": "2026-05-05T20:17:55.968479",
   "total": 40,
   "market_signal": {
     "signal": "⚖️ 관망",
@@ -324,41 +324,6 @@
     },
     {
       "rank": 9,
-      "ticker": "006340",
-      "name": "대원전선",
-      "market": "KOSPI",
-      "tvol": 7144,
-      "per": 153.54,
-      "pbr": 11.36,
-      "eps": 113.0,
-      "bps": 1527.0,
-      "roe": 7.4,
-      "close": 17350.0,
-      "eps_trend": "유지",
-      "eps_growth": 0.0,
-      "debt_ratio": 127.8,
-      "ch20": 233.0,
-      "ch5": 70.6,
-      "vol_trend": 78.0,
-      "rsi": 95.5,
-      "is_dividend": false,
-      "filters": {
-        "roe_ok": false,
-        "per_ok": false,
-        "eps_ok": true,
-        "eps_up": false,
-        "debt_ok": true,
-        "is_finance": false,
-        "score": 2,
-        "grade": "D",
-        "recommended": false
-      },
-      "grade": "D",
-      "score": 2,
-      "recommended": false
-    },
-    {
-      "rank": 10,
       "ticker": "062040",
       "name": "산일전기",
       "market": "KOSPI",
@@ -393,7 +358,7 @@
       "recommended": true
     },
     {
-      "rank": 11,
+      "rank": 10,
       "ticker": "012450",
       "name": "한화에어로스페이스",
       "market": "KOSPI",
@@ -428,7 +393,7 @@
       "recommended": false
     },
     {
-      "rank": 12,
+      "rank": 11,
       "ticker": "006910",
       "name": "보성파워텍",
       "market": "KOSDAQ",
@@ -463,7 +428,7 @@
       "recommended": false
     },
     {
-      "rank": 13,
+      "rank": 12,
       "ticker": "018880",
       "name": "한온시스템",
       "market": "KOSPI",
@@ -498,7 +463,7 @@
       "recommended": false
     },
     {
-      "rank": 14,
+      "rank": 13,
       "ticker": "016360",
       "name": "삼성증권",
       "market": "KOSPI",
@@ -533,7 +498,7 @@
       "recommended": true
     },
     {
-      "rank": 15,
+      "rank": 14,
       "ticker": "005490",
       "name": "POSCO홀딩스",
       "market": "KOSPI",
@@ -568,7 +533,7 @@
       "recommended": false
     },
     {
-      "rank": 16,
+      "rank": 15,
       "ticker": "006400",
       "name": "삼성SDI",
       "market": "KOSPI",
@@ -603,7 +568,7 @@
       "recommended": false
     },
     {
-      "rank": 17,
+      "rank": 16,
       "ticker": "005380",
       "name": "현대차",
       "market": "KOSPI",
@@ -638,7 +603,7 @@
       "recommended": false
     },
     {
-      "rank": 18,
+      "rank": 17,
       "ticker": "006800",
       "name": "미래에셋증권",
       "market": "KOSPI",
@@ -673,7 +638,7 @@
       "recommended": false
     },
     {
-      "rank": 19,
+      "rank": 18,
       "ticker": "010120",
       "name": "LS ELECTRIC",
       "market": "KOSPI",
@@ -708,7 +673,7 @@
       "recommended": false
     },
     {
-      "rank": 20,
+      "rank": 19,
       "ticker": "050890",
       "name": "쏠리드",
       "market": "KOSDAQ",
@@ -743,7 +708,7 @@
       "recommended": false
     },
     {
-      "rank": 21,
+      "rank": 20,
       "ticker": "001510",
       "name": "SK증권",
       "market": "KOSPI",
@@ -778,7 +743,7 @@
       "recommended": false
     },
     {
-      "rank": 22,
+      "rank": 21,
       "ticker": "034020",
       "name": "두산에너빌리티",
       "market": "KOSPI",
@@ -813,7 +778,7 @@
       "recommended": false
     },
     {
-      "rank": 23,
+      "rank": 22,
       "ticker": "042700",
       "name": "한미반도체",
       "market": "KOSPI",
@@ -848,7 +813,7 @@
       "recommended": true
     },
     {
-      "rank": 24,
+      "rank": 23,
       "ticker": "064350",
       "name": "현대로템",
       "market": "KOSPI",
@@ -883,7 +848,7 @@
       "recommended": false
     },
     {
-      "rank": 25,
+      "rank": 24,
       "ticker": "047810",
       "name": "한국항공우주",
       "market": "KOSPI",
@@ -918,7 +883,7 @@
       "recommended": false
     },
     {
-      "rank": 26,
+      "rank": 25,
       "ticker": "080220",
       "name": "제주반도체",
       "market": "KOSDAQ",
@@ -953,7 +918,7 @@
       "recommended": true
     },
     {
-      "rank": 27,
+      "rank": 26,
       "ticker": "103590",
       "name": "일진전기",
       "market": "KOSPI",
@@ -988,7 +953,7 @@
       "recommended": true
     },
     {
-      "rank": 28,
+      "rank": 27,
       "ticker": "329180",
       "name": "HD현대중공업",
       "market": "KOSPI",
@@ -1023,7 +988,7 @@
       "recommended": true
     },
     {
-      "rank": 29,
+      "rank": 28,
       "ticker": "079550",
       "name": "LIG디펜스앤에어로스페이스",
       "market": "KOSPI",
@@ -1058,7 +1023,7 @@
       "recommended": false
     },
     {
-      "rank": 30,
+      "rank": 29,
       "ticker": "298040",
       "name": "효성중공업",
       "market": "KOSPI",
@@ -1093,7 +1058,7 @@
       "recommended": true
     },
     {
-      "rank": 31,
+      "rank": 30,
       "ticker": "010140",
       "name": "삼성중공업",
       "market": "KOSPI",
@@ -1128,7 +1093,7 @@
       "recommended": false
     },
     {
-      "rank": 32,
+      "rank": 31,
       "ticker": "051910",
       "name": "LG화학",
       "market": "KOSPI",
@@ -1163,7 +1128,7 @@
       "recommended": false
     },
     {
-      "rank": 33,
+      "rank": 32,
       "ticker": "267260",
       "name": "HD현대일렉트릭",
       "market": "KOSPI",
@@ -1198,7 +1163,7 @@
       "recommended": true
     },
     {
-      "rank": 34,
+      "rank": 33,
       "ticker": "490470",
       "name": "세미파이브",
       "market": "KOSDAQ",
@@ -1233,7 +1198,7 @@
       "recommended": false
     },
     {
-      "rank": 35,
+      "rank": 34,
       "ticker": "027360",
       "name": "아주IB투자",
       "market": "KOSDAQ",
@@ -1268,7 +1233,7 @@
       "recommended": false
     },
     {
-      "rank": 36,
+      "rank": 35,
       "ticker": "033100",
       "name": "제룡전기",
       "market": "KOSDAQ",
@@ -1303,7 +1268,7 @@
       "recommended": false
     },
     {
-      "rank": 37,
+      "rank": 36,
       "ticker": "105560",
       "name": "KB금융",
       "market": "KOSPI",
@@ -1338,7 +1303,7 @@
       "recommended": true
     },
     {
-      "rank": 38,
+      "rank": 37,
       "ticker": "066570",
       "name": "LG전자",
       "market": "KOSPI",
@@ -1373,7 +1338,7 @@
       "recommended": false
     },
     {
-      "rank": 39,
+      "rank": 38,
       "ticker": "066970",
       "name": "엘앤에프",
       "market": "KOSPI",
@@ -1408,7 +1373,7 @@
       "recommended": false
     },
     {
-      "rank": 40,
+      "rank": 39,
       "ticker": "042660",
       "name": "한화오션",
       "market": "KOSPI",
@@ -1433,6 +1398,41 @@
         "eps_ok": true,
         "eps_up": true,
         "debt_ok": false,
+        "is_finance": false,
+        "score": 3,
+        "grade": "C",
+        "recommended": false
+      },
+      "grade": "C",
+      "score": 3,
+      "recommended": false
+    },
+    {
+      "rank": 40,
+      "ticker": "028260",
+      "name": "삼성물산",
+      "market": "KOSPI",
+      "tvol": 2001,
+      "per": 22.59,
+      "pbr": 1.05,
+      "eps": 14165.0,
+      "bps": 305019.0,
+      "roe": 4.6,
+      "close": 320000.0,
+      "eps_trend": "상승",
+      "eps_growth": 47.9,
+      "debt_ratio": 50.5,
+      "ch20": 18.7,
+      "ch5": 2.6,
+      "vol_trend": 2.7,
+      "rsi": 66.0,
+      "is_dividend": true,
+      "filters": {
+        "roe_ok": false,
+        "per_ok": false,
+        "eps_ok": true,
+        "eps_up": true,
+        "debt_ok": true,
         "is_finance": false,
         "score": 3,
         "grade": "C",
@@ -1515,7 +1515,7 @@
       "recommended": true
     },
     {
-      "rank": 10,
+      "rank": 9,
       "ticker": "062040",
       "name": "산일전기",
       "market": "KOSPI",
@@ -1550,7 +1550,7 @@
       "recommended": true
     },
     {
-      "rank": 14,
+      "rank": 13,
       "ticker": "016360",
       "name": "삼성증권",
       "market": "KOSPI",
@@ -1585,7 +1585,7 @@
       "recommended": true
     },
     {
-      "rank": 23,
+      "rank": 22,
       "ticker": "042700",
       "name": "한미반도체",
       "market": "KOSPI",
@@ -1620,7 +1620,7 @@
       "recommended": true
     },
     {
-      "rank": 26,
+      "rank": 25,
       "ticker": "080220",
       "name": "제주반도체",
       "market": "KOSDAQ",
@@ -1655,7 +1655,7 @@
       "recommended": true
     },
     {
-      "rank": 27,
+      "rank": 26,
       "ticker": "103590",
       "name": "일진전기",
       "market": "KOSPI",
@@ -1690,7 +1690,7 @@
       "recommended": true
     },
     {
-      "rank": 28,
+      "rank": 27,
       "ticker": "329180",
       "name": "HD현대중공업",
       "market": "KOSPI",
@@ -1725,7 +1725,7 @@
       "recommended": true
     },
     {
-      "rank": 30,
+      "rank": 29,
       "ticker": "298040",
       "name": "효성중공업",
       "market": "KOSPI",
@@ -1760,7 +1760,7 @@
       "recommended": true
     },
     {
-      "rank": 33,
+      "rank": 32,
       "ticker": "267260",
       "name": "HD현대일렉트릭",
       "market": "KOSPI",
@@ -1795,7 +1795,7 @@
       "recommended": true
     },
     {
-      "rank": 37,
+      "rank": 36,
       "ticker": "105560",
       "name": "KB금융",
       "market": "KOSPI",
